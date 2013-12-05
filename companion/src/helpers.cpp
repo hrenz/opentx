@@ -705,7 +705,7 @@ void populateBacklightCB(QComboBox *b, const uint8_t value)
   }
 }
 
-void populateSwitchCB(QComboBox *b, const RawSwitch & value, unsigned long attr, UseContext context)
+void populateSwitchCB(QComboBox *b, const RawSwitch value, unsigned long attr, UseContext context)
 {
   RawSwitch item;
 

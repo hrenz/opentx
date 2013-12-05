@@ -92,6 +92,8 @@ private:
     QSlider * phasesTrimSliders[9][4];
     QSpinBox * phasesTrimValues[9][4];
 
+    void storePhasesWidgets();
+
     void setupExposListWidget();
     void setupMixerListWidget();
     float getBarStep(int barId);

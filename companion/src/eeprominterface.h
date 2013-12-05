@@ -65,7 +65,7 @@ const uint8_t modn12x3[4][4]= {
 #define C9X_MAX_EXPOS             32
 #define C9X_MAX_CURVES            16
 #define MAX_POINTS                17
-#define C9X_MAX_GVARS                 9
+#define C9X_MAX_GVARS             9
 #define NUM_SAFETY_CHNOUT         16
 #define C9X_NUM_CHNOUT            32 // number of real output channels
 #define C9X_NUM_CSW               32 // number of custom switches

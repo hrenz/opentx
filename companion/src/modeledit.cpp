@@ -43,6 +43,8 @@ ModelEdit::ModelEdit(RadioData &radioData, uint8_t id, bool openWizard, bool isN
 {
     ui->setupUi(this);
 
+    storePhasesWidgets();
+
     setupMixerListWidget();
     setupExposListWidget();
 
@@ -120,6 +122,63 @@ ModelEdit::~ModelEdit()
     delete ui;
 }
 
+void ModelEdit::storePhasesWidgets()
+{
+  QSpinBox * tmp[C9X_MAX_PHASES][5]={
+    {ui->phase0GV1Value,ui->phase0GV2Value,ui->phase0GV3Value,ui->phase0GV4Value,ui->phase0GV5Value} ,
+    {ui->phase1GV1Value,ui->phase1GV2Value,ui->phase1GV3Value,ui->phase1GV4Value,ui->phase1GV5Value} ,
+    {ui->phase2GV1Value,ui->phase2GV2Value,ui->phase2GV3Value,ui->phase2GV4Value,ui->phase2GV5Value} ,
+    {ui->phase3GV1Value,ui->phase3GV2Value,ui->phase3GV3Value,ui->phase3GV4Value,ui->phase3GV5Value} ,
+    {ui->phase4GV1Value,ui->phase4GV2Value,ui->phase4GV3Value,ui->phase4GV4Value,ui->phase4GV5Value} ,
+    {ui->phase5GV1Value,ui->phase5GV2Value,ui->phase5GV3Value,ui->phase5GV4Value,ui->phase5GV5Value} ,
+    {ui->phase6GV1Value,ui->phase6GV2Value,ui->phase6GV3Value,ui->phase6GV4Value,ui->phase6GV5Value} ,
+    {ui->phase7GV1Value,ui->phase7GV2Value,ui->phase7GV3Value,ui->phase7GV4Value,ui->phase7GV5Value} ,
+    {ui->phase8GV1Value,ui->phase8GV2Value,ui->phase8GV3Value,ui->phase8GV4Value,ui->phase8GV5Value}
+  };
+
+  memcpy(gvarsSB, tmp, sizeof(gvarsSB));
+
+  QSpinBox * tmp2[C9X_MAX_PHASES][2]={
+    {ui->phase0RE1Value,ui->phase0RE2Value} ,
+    {ui->phase1RE1Value,ui->phase1RE2Value} ,
+    {ui->phase2RE1Value,ui->phase2RE2Value} ,
+    {ui->phase3RE1Value,ui->phase3RE2Value} ,
+    {ui->phase4RE1Value,ui->phase4RE2Value} ,
+    {ui->phase5RE1Value,ui->phase5RE2Value} ,
+    {ui->phase6RE1Value,ui->phase6RE2Value} ,
+    {ui->phase7RE1Value,ui->phase7RE2Value} ,
+    {ui->phase8RE1Value,ui->phase8RE2Value} ,
+  };
+
+  memcpy(reSB, tmp2, sizeof(reSB));
+
+  QSlider * tmpsliders[C9X_MAX_PHASES][4]={
+    {ui->phase0Trim1Slider,ui->phase0Trim2Slider,ui->phase0Trim3Slider,ui->phase0Trim4Slider},
+    {ui->phase1Trim1Slider,ui->phase1Trim2Slider,ui->phase1Trim3Slider,ui->phase1Trim4Slider},
+    {ui->phase2Trim1Slider,ui->phase2Trim2Slider,ui->phase2Trim3Slider,ui->phase2Trim4Slider},
+    {ui->phase3Trim1Slider,ui->phase3Trim2Slider,ui->phase3Trim3Slider,ui->phase3Trim4Slider},
+    {ui->phase4Trim1Slider,ui->phase4Trim2Slider,ui->phase4Trim3Slider,ui->phase4Trim4Slider},
+    {ui->phase5Trim1Slider,ui->phase5Trim2Slider,ui->phase5Trim3Slider,ui->phase5Trim4Slider},
+    {ui->phase6Trim1Slider,ui->phase6Trim2Slider,ui->phase6Trim3Slider,ui->phase6Trim4Slider},
+    {ui->phase7Trim1Slider,ui->phase7Trim2Slider,ui->phase7Trim3Slider,ui->phase7Trim4Slider},
+    {ui->phase8Trim1Slider,ui->phase8Trim2Slider,ui->phase8Trim3Slider,ui->phase8Trim4Slider}
+  };
+  memcpy(phasesTrimSliders,tmpsliders,sizeof(phasesTrimSliders));
+
+  QSpinBox * tmpspinbox[C9X_MAX_PHASES][4]={
+    {ui->phase0Trim1Value,ui->phase0Trim2Value,ui->phase0Trim3Value,ui->phase0Trim4Value},
+    {ui->phase1Trim1Value,ui->phase1Trim2Value,ui->phase1Trim3Value,ui->phase1Trim4Value},
+    {ui->phase2Trim1Value,ui->phase2Trim2Value,ui->phase2Trim3Value,ui->phase2Trim4Value},
+    {ui->phase3Trim1Value,ui->phase3Trim2Value,ui->phase3Trim3Value,ui->phase3Trim4Value},
+    {ui->phase4Trim1Value,ui->phase4Trim2Value,ui->phase4Trim3Value,ui->phase4Trim4Value},
+    {ui->phase5Trim1Value,ui->phase5Trim2Value,ui->phase5Trim3Value,ui->phase5Trim4Value},
+    {ui->phase6Trim1Value,ui->phase6Trim2Value,ui->phase6Trim3Value,ui->phase6Trim4Value},
+    {ui->phase7Trim1Value,ui->phase7Trim2Value,ui->phase7Trim3Value,ui->phase7Trim4Value},
+    {ui->phase8Trim1Value,ui->phase8Trim2Value,ui->phase8Trim3Value,ui->phase8Trim4Value}
+  };
+
+  memcpy(phasesTrimValues,tmpspinbox,sizeof(phasesTrimValues));
+}
 
 float ModelEdit::getBarStep(int barId) 
 {
@@ -1200,33 +1259,6 @@ void ModelEdit::displayOnePhase(unsigned int phase_idx, QLineEdit *name, QComboB
 
 void ModelEdit::tabPhases()
 {
-    QSpinBox * tmp[9][5]={
-      {ui->phase0GV1Value,ui->phase0GV2Value,ui->phase0GV3Value,ui->phase0GV4Value,ui->phase0GV5Value} ,
-      {ui->phase1GV1Value,ui->phase1GV2Value,ui->phase1GV3Value,ui->phase1GV4Value,ui->phase1GV5Value} ,
-      {ui->phase2GV1Value,ui->phase2GV2Value,ui->phase2GV3Value,ui->phase2GV4Value,ui->phase2GV5Value} ,
-      {ui->phase3GV1Value,ui->phase3GV2Value,ui->phase3GV3Value,ui->phase3GV4Value,ui->phase3GV5Value} ,
-      {ui->phase4GV1Value,ui->phase4GV2Value,ui->phase4GV3Value,ui->phase4GV4Value,ui->phase4GV5Value} ,
-      {ui->phase5GV1Value,ui->phase5GV2Value,ui->phase5GV3Value,ui->phase5GV4Value,ui->phase5GV5Value} ,
-      {ui->phase6GV1Value,ui->phase6GV2Value,ui->phase6GV3Value,ui->phase6GV4Value,ui->phase6GV5Value} ,
-      {ui->phase7GV1Value,ui->phase7GV2Value,ui->phase7GV3Value,ui->phase7GV4Value,ui->phase7GV5Value} ,
-      {ui->phase8GV1Value,ui->phase8GV2Value,ui->phase8GV3Value,ui->phase8GV4Value,ui->phase8GV5Value}
-    };
-
-    QSpinBox * tmp2[9][2]={
-      {ui->phase0RE1Value,ui->phase0RE2Value} ,
-      {ui->phase1RE1Value,ui->phase1RE2Value} ,
-      {ui->phase2RE1Value,ui->phase2RE2Value} ,
-      {ui->phase3RE1Value,ui->phase3RE2Value} ,
-      {ui->phase4RE1Value,ui->phase4RE2Value} ,
-      {ui->phase5RE1Value,ui->phase5RE2Value} ,
-      {ui->phase6RE1Value,ui->phase6RE2Value} ,
-      {ui->phase7RE1Value,ui->phase7RE2Value} ,
-      {ui->phase8RE1Value,ui->phase8RE2Value} ,    
-    };
-
-    memcpy(gvarsSB, tmp, sizeof(gvarsSB));
-    memcpy(reSB, tmp2, sizeof(reSB));
-
     phasesLock = true;
     int gvars=0;
     if (GetEepromInterface()->getCapability(HasVariants)) {
@@ -1351,31 +1383,6 @@ void ModelEdit::tabPhases()
     displayOnePhase(6, ui->phase6Name, ui->phase6Switch, ui->phase6FadeIn, ui->phase6FadeOut, ui->phase6Trim1Use, ui->phase6Trim1Value, ui->phase6Trim1Label, ui->phase6Trim1Slider, ui->phase6Trim2Use, ui->phase6Trim2Value, ui->phase6Trim2Label, ui->phase6Trim2Slider, ui->phase6Trim3Use, ui->phase6Trim3Value, ui->phase6Trim3Label, ui->phase6Trim3Slider, ui->phase6Trim4Use, ui->phase6Trim4Value, ui->phase6Trim4Label, ui->phase6Trim4Slider, ui->phase6GV1_Label, ui->phase6GV1Use, ui->phase6GV1Value, ui->phase6GV2_Label, ui->phase6GV2Use, ui->phase6GV2Value, ui->phase6GV3_Label, ui->phase6GV3Use, ui->phase6GV3Value, ui->phase6GV4_Label, ui->phase6GV4Use, ui->phase6GV4Value, ui->phase6GV5_Label, ui->phase6GV5Use, ui->phase6GV5Value,ui->phase6REA_Label, ui->phase6RE1Use, ui->phase6RE1Value,ui->phase6REB_Label, ui->phase6RE2Use, ui->phase6RE2Value, true);
     displayOnePhase(7, ui->phase7Name, ui->phase7Switch, ui->phase7FadeIn, ui->phase7FadeOut, ui->phase7Trim1Use, ui->phase7Trim1Value, ui->phase7Trim1Label, ui->phase7Trim1Slider, ui->phase7Trim2Use, ui->phase7Trim2Value, ui->phase7Trim2Label, ui->phase7Trim2Slider, ui->phase7Trim3Use, ui->phase7Trim3Value, ui->phase7Trim3Label, ui->phase7Trim3Slider, ui->phase7Trim4Use, ui->phase7Trim4Value, ui->phase7Trim4Label, ui->phase7Trim4Slider, ui->phase7GV1_Label, ui->phase7GV1Use, ui->phase7GV1Value, ui->phase7GV2_Label, ui->phase7GV2Use, ui->phase7GV2Value, ui->phase7GV3_Label, ui->phase7GV3Use, ui->phase7GV3Value, ui->phase7GV4_Label, ui->phase7GV4Use, ui->phase7GV4Value, ui->phase7GV5_Label, ui->phase7GV5Use, ui->phase7GV5Value,ui->phase7REA_Label, ui->phase7RE1Use, ui->phase7RE1Value,ui->phase7REB_Label, ui->phase7RE2Use, ui->phase7RE2Value, true);
     displayOnePhase(8, ui->phase8Name, ui->phase8Switch, ui->phase8FadeIn, ui->phase8FadeOut, ui->phase8Trim1Use, ui->phase8Trim1Value, ui->phase8Trim1Label, ui->phase8Trim1Slider, ui->phase8Trim2Use, ui->phase8Trim2Value, ui->phase8Trim2Label, ui->phase8Trim2Slider, ui->phase8Trim3Use, ui->phase8Trim3Value, ui->phase8Trim3Label, ui->phase8Trim3Slider, ui->phase8Trim4Use, ui->phase8Trim4Value, ui->phase8Trim4Label, ui->phase8Trim4Slider, ui->phase8GV1_Label, ui->phase8GV1Use, ui->phase8GV1Value, ui->phase8GV2_Label, ui->phase8GV2Use, ui->phase8GV2Value, ui->phase8GV3_Label, ui->phase8GV3Use, ui->phase8GV3Value, ui->phase8GV4_Label, ui->phase8GV4Use, ui->phase8GV4Value, ui->phase8GV5_Label, ui->phase8GV5Use, ui->phase8GV5Value,ui->phase8REA_Label, ui->phase8RE1Use, ui->phase8RE1Value,ui->phase8REB_Label, ui->phase8RE2Use, ui->phase8RE2Value, true);
-
-    QSlider * tmpsliders[9][4]={
-      {ui->phase0Trim1Slider,ui->phase0Trim2Slider,ui->phase0Trim3Slider,ui->phase0Trim4Slider},
-      {ui->phase1Trim1Slider,ui->phase1Trim2Slider,ui->phase1Trim3Slider,ui->phase1Trim4Slider},
-      {ui->phase2Trim1Slider,ui->phase2Trim2Slider,ui->phase2Trim3Slider,ui->phase2Trim4Slider},
-      {ui->phase3Trim1Slider,ui->phase3Trim2Slider,ui->phase3Trim3Slider,ui->phase3Trim4Slider},
-      {ui->phase4Trim1Slider,ui->phase4Trim2Slider,ui->phase4Trim3Slider,ui->phase4Trim4Slider},
-      {ui->phase5Trim1Slider,ui->phase5Trim2Slider,ui->phase5Trim3Slider,ui->phase5Trim4Slider},
-      {ui->phase6Trim1Slider,ui->phase6Trim2Slider,ui->phase6Trim3Slider,ui->phase6Trim4Slider},
-      {ui->phase7Trim1Slider,ui->phase7Trim2Slider,ui->phase7Trim3Slider,ui->phase7Trim4Slider},
-      {ui->phase8Trim1Slider,ui->phase8Trim2Slider,ui->phase8Trim3Slider,ui->phase8Trim4Slider}
-    };
-    QSpinBox * tmpspinbox[9][4]={
-      {ui->phase0Trim1Value,ui->phase0Trim2Value,ui->phase0Trim3Value,ui->phase0Trim4Value},
-      {ui->phase1Trim1Value,ui->phase1Trim2Value,ui->phase1Trim3Value,ui->phase1Trim4Value},
-      {ui->phase2Trim1Value,ui->phase2Trim2Value,ui->phase2Trim3Value,ui->phase2Trim4Value},
-      {ui->phase3Trim1Value,ui->phase3Trim2Value,ui->phase3Trim3Value,ui->phase3Trim4Value},
-      {ui->phase4Trim1Value,ui->phase4Trim2Value,ui->phase4Trim3Value,ui->phase4Trim4Value},
-      {ui->phase5Trim1Value,ui->phase5Trim2Value,ui->phase5Trim3Value,ui->phase5Trim4Value},
-      {ui->phase6Trim1Value,ui->phase6Trim2Value,ui->phase6Trim3Value,ui->phase6Trim4Value},
-      {ui->phase7Trim1Value,ui->phase7Trim2Value,ui->phase7Trim3Value,ui->phase7Trim4Value},
-      {ui->phase8Trim1Value,ui->phase8Trim2Value,ui->phase8Trim3Value,ui->phase8Trim4Value}
-    };
-    memcpy(phasesTrimSliders,tmpsliders,sizeof(phasesTrimSliders));
-    memcpy(phasesTrimValues,tmpspinbox,sizeof(phasesTrimValues));
 
     int phases = GetEepromInterface()->getCapability(FlightPhases);
     if (phases < 9) {
