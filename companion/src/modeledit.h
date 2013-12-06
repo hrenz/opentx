@@ -36,8 +36,10 @@ private:
 
     QSpinBox* spny[17];
     QSpinBox* spnx[17];
-    QSpinBox* gvarsSB[9][5];
-    QSpinBox* reSB[9][2];
+    QGroupBox* gvarsGB[C9X_MAX_PHASES];
+    QSpinBox* gvarsSB[C9X_MAX_PHASES][5];
+    QSpinBox* reSB[C9X_MAX_PHASES][2];
+    QGroupBox* reGB[C9X_MAX_PHASES];
     QGroupBox* barsGB[3];
     QGroupBox* numsGB[3];
     QComboBox* barsCB[12];

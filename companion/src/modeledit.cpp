@@ -124,60 +124,23 @@ ModelEdit::~ModelEdit()
 
 void ModelEdit::storePhasesWidgets()
 {
-  QSpinBox * tmp[C9X_MAX_PHASES][5]={
-    {ui->phase0GV1Value,ui->phase0GV2Value,ui->phase0GV3Value,ui->phase0GV4Value,ui->phase0GV5Value} ,
-    {ui->phase1GV1Value,ui->phase1GV2Value,ui->phase1GV3Value,ui->phase1GV4Value,ui->phase1GV5Value} ,
-    {ui->phase2GV1Value,ui->phase2GV2Value,ui->phase2GV3Value,ui->phase2GV4Value,ui->phase2GV5Value} ,
-    {ui->phase3GV1Value,ui->phase3GV2Value,ui->phase3GV3Value,ui->phase3GV4Value,ui->phase3GV5Value} ,
-    {ui->phase4GV1Value,ui->phase4GV2Value,ui->phase4GV3Value,ui->phase4GV4Value,ui->phase4GV5Value} ,
-    {ui->phase5GV1Value,ui->phase5GV2Value,ui->phase5GV3Value,ui->phase5GV4Value,ui->phase5GV5Value} ,
-    {ui->phase6GV1Value,ui->phase6GV2Value,ui->phase6GV3Value,ui->phase6GV4Value,ui->phase6GV5Value} ,
-    {ui->phase7GV1Value,ui->phase7GV2Value,ui->phase7GV3Value,ui->phase7GV4Value,ui->phase7GV5Value} ,
-    {ui->phase8GV1Value,ui->phase8GV2Value,ui->phase8GV3Value,ui->phase8GV4Value,ui->phase8GV5Value}
-  };
-
-  memcpy(gvarsSB, tmp, sizeof(gvarsSB));
-
-  QSpinBox * tmp2[C9X_MAX_PHASES][2]={
-    {ui->phase0RE1Value,ui->phase0RE2Value} ,
-    {ui->phase1RE1Value,ui->phase1RE2Value} ,
-    {ui->phase2RE1Value,ui->phase2RE2Value} ,
-    {ui->phase3RE1Value,ui->phase3RE2Value} ,
-    {ui->phase4RE1Value,ui->phase4RE2Value} ,
-    {ui->phase5RE1Value,ui->phase5RE2Value} ,
-    {ui->phase6RE1Value,ui->phase6RE2Value} ,
-    {ui->phase7RE1Value,ui->phase7RE2Value} ,
-    {ui->phase8RE1Value,ui->phase8RE2Value} ,
-  };
-
-  memcpy(reSB, tmp2, sizeof(reSB));
-
-  QSlider * tmpsliders[C9X_MAX_PHASES][4]={
-    {ui->phase0Trim1Slider,ui->phase0Trim2Slider,ui->phase0Trim3Slider,ui->phase0Trim4Slider},
-    {ui->phase1Trim1Slider,ui->phase1Trim2Slider,ui->phase1Trim3Slider,ui->phase1Trim4Slider},
-    {ui->phase2Trim1Slider,ui->phase2Trim2Slider,ui->phase2Trim3Slider,ui->phase2Trim4Slider},
-    {ui->phase3Trim1Slider,ui->phase3Trim2Slider,ui->phase3Trim3Slider,ui->phase3Trim4Slider},
-    {ui->phase4Trim1Slider,ui->phase4Trim2Slider,ui->phase4Trim3Slider,ui->phase4Trim4Slider},
-    {ui->phase5Trim1Slider,ui->phase5Trim2Slider,ui->phase5Trim3Slider,ui->phase5Trim4Slider},
-    {ui->phase6Trim1Slider,ui->phase6Trim2Slider,ui->phase6Trim3Slider,ui->phase6Trim4Slider},
-    {ui->phase7Trim1Slider,ui->phase7Trim2Slider,ui->phase7Trim3Slider,ui->phase7Trim4Slider},
-    {ui->phase8Trim1Slider,ui->phase8Trim2Slider,ui->phase8Trim3Slider,ui->phase8Trim4Slider}
-  };
-  memcpy(phasesTrimSliders,tmpsliders,sizeof(phasesTrimSliders));
-
-  QSpinBox * tmpspinbox[C9X_MAX_PHASES][4]={
-    {ui->phase0Trim1Value,ui->phase0Trim2Value,ui->phase0Trim3Value,ui->phase0Trim4Value},
-    {ui->phase1Trim1Value,ui->phase1Trim2Value,ui->phase1Trim3Value,ui->phase1Trim4Value},
-    {ui->phase2Trim1Value,ui->phase2Trim2Value,ui->phase2Trim3Value,ui->phase2Trim4Value},
-    {ui->phase3Trim1Value,ui->phase3Trim2Value,ui->phase3Trim3Value,ui->phase3Trim4Value},
-    {ui->phase4Trim1Value,ui->phase4Trim2Value,ui->phase4Trim3Value,ui->phase4Trim4Value},
-    {ui->phase5Trim1Value,ui->phase5Trim2Value,ui->phase5Trim3Value,ui->phase5Trim4Value},
-    {ui->phase6Trim1Value,ui->phase6Trim2Value,ui->phase6Trim3Value,ui->phase6Trim4Value},
-    {ui->phase7Trim1Value,ui->phase7Trim2Value,ui->phase7Trim3Value,ui->phase7Trim4Value},
-    {ui->phase8Trim1Value,ui->phase8Trim2Value,ui->phase8Trim3Value,ui->phase8Trim4Value}
-  };
-
-  memcpy(phasesTrimValues,tmpspinbox,sizeof(phasesTrimValues));
+  for (int p=0; p<C9X_MAX_PHASES; p++) {
+    gvarsGB[p] = findChild<QGroupBox *>(QString("phase%1gvGB").arg(p));
+    for (int gv=0; gv<5; gv++) {
+      gvarsSB[p][gv] = findChild<QSpinBox *>(QString("phase%1GV%2Value").arg(p).arg(gv));
+    }
+    reGB[p] = findChild<QGroupBox *>(QString("phase%1reGB").arg(p));
+    for (int re=0; re<2; re++) {
+      reSB[p][re] = findChild<QSpinBox *>(QString("phase%1RE%2Value").arg(p).arg(re));
+    }
+    for (int tr=0; tr<4; tr++) {
+      phasesTrimSliders[p][tr] = findChild<QSlider *>(QString("phase%1Trim%2Slider").arg(p).arg(tr));
+      phasesTrimValues[p][tr] = findChild<QSpinBox *>(QString("phase%1Trim%2Value").arg(p).arg(tr));
+    }
+    for (int tr=0; tr<4; tr++) {
+      phasesTrimSliders[p][tr] = findChild<QSlider *>(QString("phase%1Trim%2Slider").arg(p).arg(tr));
+    }
+  }
 }
 
 float ModelEdit::getBarStep(int barId) 
@@ -1268,28 +1231,15 @@ void ModelEdit::tabPhases()
       gvars=GetEepromInterface()->getCapability(Gvars);
     }
     if (!GetEepromInterface()->getCapability(RotaryEncoders)) {
-      ui->phase0reGB->hide();
-      ui->phase1reGB->hide();
-      ui->phase2reGB->hide();
-      ui->phase3reGB->hide();
-      ui->phase4reGB->hide();
-      ui->phase5reGB->hide();
-      ui->phase6reGB->hide();
-      ui->phase7reGB->hide();
-      ui->phase8reGB->hide();
+      for (int p=0; p<C9X_MAX_PHASES; p++)
+        reGB[p]->hide();
     }
     if (!GetEepromInterface()->getCapability(GvarsFlightPhases) || gvars==0) {
       if (!GetEepromInterface()->getCapability(Gvars) || gvars==0) {
         ui->phase0gvGB->hide();
       }
-      ui->phase1gvGB->hide();
-      ui->phase2gvGB->hide();
-      ui->phase3gvGB->hide();
-      ui->phase4gvGB->hide();
-      ui->phase5gvGB->hide();
-      ui->phase6gvGB->hide();
-      ui->phase7gvGB->hide();
-      ui->phase8gvGB->hide();
+      for (int p=1; p<C9X_MAX_PHASES; p++)
+        gvarsGB[p]->hide();
     }
 
     if (!GetEepromInterface()->getCapability(GvarsAreNamed)) {
@@ -6161,17 +6111,16 @@ void ModelEdit::moveExpoDown()
 void ModelEdit::launchSimulation()
 {
     if (GetEepromInterface()->getSimulator()) {
-      RadioData *simuData = new RadioData;
-      *simuData = radioData;
+      QSharedPointer<RadioData> simuData = QSharedPointer<RadioData>(new RadioData(radioData));
       simuData->models[id_model] = g_model;
       if (GetEepromInterface()->getCapability(SimulatorType)) {
-        xsimulatorDialog sd(this);
-        sd.loadParams(*simuData, id_model);
-        sd.exec();
+        QPointer<xsimulatorDialog> sd = new xsimulatorDialog(this);
+        sd->loadParams(*simuData, id_model);
+        sd->exec();
       } else {
-        simulatorDialog sd(this);
-        sd.loadParams(*simuData, id_model);
-        sd.exec();
+        QPointer<simulatorDialog> sd = new simulatorDialog(this);
+        sd->loadParams(*simuData, id_model);
+        sd->exec();
       }
     } else {
       QMessageBox::warning(NULL,

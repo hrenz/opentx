@@ -1295,11 +1295,8 @@ bool MainWindow::convertEEPROM(QString backupFile, QString restoreFile, QString 
     long result = file.read((char*)eeprom, eeprom_size);
     file.close();
 
-    RadioData radioData;
-    if (!LoadEeprom(radioData, eeprom, eeprom_size))
-      return false;
-
-    if (!firmware->saveEEPROM(eeprom, radioData, variant, version))
+    QSharedPointer<RadioData> radioData = QSharedPointer<RadioData>(new RadioData());
+    if (!LoadEeprom(*radioData, eeprom, eeprom_size) || !firmware->saveEEPROM(eeprom, *radioData, variant, version))
       return false;
 
     QFile file2(restoreFile);
@@ -2052,7 +2049,6 @@ QString MainWindow::strippedName(const QString &fullFileName)
 
 int MainWindow::getEpromVersion(QString fileName)
 {
-  RadioData testData;
   if (fileName.isEmpty()) {
     return -1;
   }
@@ -2061,6 +2057,7 @@ int MainWindow::getEpromVersion(QString fileName)
     QMessageBox::critical(this, tr("Error"), tr("Unable to find file %1!").arg(fileName));
     return -1;
   }
+  QSharedPointer<RadioData> testData = QSharedPointer<RadioData>(new RadioData());
   int fileType = getFileType(fileName);
   if (fileType==FILE_TYPE_XML) {
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {  //reading HEX TEXT file
@@ -2068,7 +2065,7 @@ int MainWindow::getEpromVersion(QString fileName)
       return -1;
     }
     QTextStream inputStream(&file);
-    XmlInterface(inputStream).load(testData);
+    XmlInterface(inputStream).load(*testData);
   }
   else if (fileType==FILE_TYPE_HEX || fileType==FILE_TYPE_EEPE) { //read HEX file
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {  //reading HEX TEXT file
@@ -2078,7 +2075,7 @@ int MainWindow::getEpromVersion(QString fileName)
     QDomDocument doc(ER9X_EEPROM_FILE_TYPE);
     bool xmlOK = doc.setContent(&file);
     if(xmlOK) {
-      if (!LoadEepromXml(testData, doc)){
+      if (!LoadEepromXml(*testData, doc)){
         return -1;
       }
     }
@@ -2100,7 +2097,7 @@ int MainWindow::getEpromVersion(QString fileName)
       return -1;
     }
     file.close();
-    if (!LoadEeprom(testData, eeprom, eeprom_size)) {
+    if (!LoadEeprom(*testData, eeprom, eeprom_size)) {
       QMessageBox::critical(this, tr("Error"),tr("Invalid EEPROM File %1").arg(fileName));
       return -1;
     }
@@ -2119,12 +2116,12 @@ int MainWindow::getEpromVersion(QString fileName)
       QMessageBox::critical(this, tr("Error"),tr("Error reading file %1:\n%2.").arg(fileName).arg(file.errorString()));
       return -1;
     }
-    if (!LoadEeprom(testData, eeprom, eeprom_size)) {
+    if (!LoadEeprom(*testData, eeprom, eeprom_size)) {
       QMessageBox::critical(this, tr("Error"),tr("Invalid binary EEPROM File %1").arg(fileName));
       return -1;
     }
   }
-  return testData.generalSettings.version;
+  return testData->generalSettings.version;
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
