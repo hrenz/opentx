@@ -7,21 +7,30 @@ void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
   if (flags == TELEM_INPUT_CELLS) {
     uint32_t data = uint32_t(newVal);
     uint8_t cellIndex = data & 0xF;
-    cells.count = (data & 0xF0) >> 4;
+    uint8_t count = (data & 0xF0) >> 4;
+    if (count != cells.count) {
+      clear();
+      cells.count = count;
+    }
     cells.values[cellIndex].set(((data & 0x000FFF00) >>  8) / 5);
     if (cellIndex+1 < cells.count) {
       cells.values[cellIndex+1].set(((data & 0xFFF00000) >> 20) / 5);
     }
-    if (cellIndex+1 >= cells.count) {
+    if (cellIndex+2 >= cells.count) {
       newVal = 0;
-      for (int i=0; i<cells.count; i++) {
+      for (int i=0; i<count; i++) {
         if (cells.values[i].state) {
           newVal += cells.values[i].value;
         }
         else {
+          // we didn't receive all cells values
           return;
         }
       }
+    }
+    else {
+      // we didn't receive all cells values
+      return;
     }
   }
   else if (flags == TELEM_INPUT_FLAGS_AUTO_OFFSET) {
@@ -51,14 +60,14 @@ void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
     }
   }
 
-  value = newVal;
-  lastReceived = now();
   if (!isAvailable() || newVal < min) {
-    min = value;
+    min = newVal;
   }
   if (!isAvailable() || newVal > max) {
-    max = value;
+    max = newVal;
   }
+  value = newVal;
+  lastReceived = now();
 }
 
 bool TelemetryItem::isAvailable()

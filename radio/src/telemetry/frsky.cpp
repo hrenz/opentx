@@ -554,6 +554,12 @@ void telemetryReset()
   frskyData.hub.maxCurrent = 65;
 #endif
 
+#if defined(CPUARM)
+  for (int index=0; index<TELEM_VALUES_MAX; index++) {
+    telemetryItems[index].clear();
+  }
+#endif
+
 #if defined(SIMU) && defined(CPUARM)
   setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 0, 100);
   setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 1, 200);

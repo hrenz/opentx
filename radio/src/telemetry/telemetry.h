@@ -93,8 +93,8 @@ class TelemetryItem
 
     void clear()
     {
+      memset(this, 0, sizeof(*this));
       lastReceived = TELEMETRY_VALUE_UNAVAILABLE;
-      value = min = max = 0;
     }
 
     void eval();
