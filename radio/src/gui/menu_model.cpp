@@ -5771,6 +5771,7 @@ enum SensorFields {
   SENSOR_FIELD_NAME,
   SENSOR_FIELD_TYPE,
   SENSOR_FIELD_ID,
+  SENSOR_FIELD_FORMULA=SENSOR_FIELD_ID,
   SENSOR_FIELD_UNIT,
   SENSOR_FIELD_PRECISION,
   SENSOR_FIELD_RATIO,
@@ -5783,11 +5784,13 @@ enum SensorFields {
 #define SENSOR_2ND_COLUMN (12*FW)
 #define SENSOR_3RD_COLUMN (18*FW)
 
+#define SENSOR_OFFSET_ROWS sensor->type == TELEM_TYPE_CUSTOM ? (uint8_t)0 : HIDDEN_ROW
+
 void menuModelSensor(uint8_t event)
 {
   TelemetrySensor * sensor = & g_model.telemetrySensors[s_currIdx];
 
-  SUBMENU(STR_MENUSENSOR, SENSOR_FIELD_MAX, {0, 0, sensor->type == TELEM_TYPE_CALCULATED ? (uint8_t)0 : (uint8_t)1, 0, 0, 0, 0, 0, 0 });
+  SUBMENU(STR_MENUSENSOR, SENSOR_FIELD_MAX, {0, 0, sensor->type == TELEM_TYPE_CALCULATED ? (uint8_t)0 : (uint8_t)1, 0, 0, SENSOR_OFFSET_ROWS, SENSOR_OFFSET_ROWS, SENSOR_OFFSET_ROWS, 0 });
   lcd_outdezAtt(PSIZE(TR_MENUSENSOR)*FW+1, 0, s_currIdx+1, INVERS|LEFT);
 
   putsTelemetryChannelValue(SENSOR_2ND_COLUMN, 0, s_currIdx, getValue(MIXSRC_FIRST_TELEM+3*s_currIdx), 0);
@@ -5798,11 +5801,10 @@ void menuModelSensor(uint8_t event)
     coord_t y = MENU_TITLE_HEIGHT + 1 + i*FH;
     uint8_t k = i + s_pgOfs;
 
-    /*
     for (int j=0; j<k; j++) {
       if (mstate_tab[j+1] == HIDDEN_ROW)
         k++;
-    } */
+    }
 
     uint8_t attr = (sub==k ? (s_editMode>0 ? BLINK|INVERS : INVERS) : 0);
 
@@ -5816,6 +5818,11 @@ void menuModelSensor(uint8_t event)
         sensor->type = selectMenuItem(SENSOR_2ND_COLUMN, y, STR_TYPE, "\012Custom\0   Calculated", sensor->type, 0, 1, attr, event);
         if (attr && checkIncDec_Ret) {
           sensor->instance = 0;
+          if (sensor->type == TELEM_TYPE_CALCULATED) {
+            sensor->ratio = 0;
+            sensor->offset = 0;
+            sensor->inputFlags = 0;
+          }
         }
         break;
 
@@ -5837,16 +5844,24 @@ void menuModelSensor(uint8_t event)
           }
         }
         else {
-          sensor->formula = selectMenuItem(SENSOR_2ND_COLUMN, y, "Formula", "\005Add\0 Mean\0Cell\0", sensor->formula, 0, TELEM_FORMULA_MAX, attr, event);
+          sensor->formula = selectMenuItem(SENSOR_2ND_COLUMN, y, "Formula", "\007Add\0   AverageCell\0", sensor->formula, 0, TELEM_FORMULA_MAX, attr, event);
           if (attr && checkIncDec_Ret) {
-            sensor->cell = 0;
+            if (sensor->formula == TELEM_FORMULA_CELL) {
+              sensor->cell.source = 0;
+              sensor->cell.index = 0;
+              sensor->prec = 2;
+            }
           }
         }
         break;
 
       case SENSOR_FIELD_UNIT:
         if (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula == TELEM_FORMULA_CELL) {
-          sensor->cell = selectMenuItem(SENSOR_2ND_COLUMN, y, "Cell index", "\007Lowest\0001\0     2\0     3\0     4\0     5\0     6\0     Highest", sensor->cell, 0, 7, attr, event);
+          lcd_putsLeft(y, "Cells sensor");
+          putsMixerSource(SENSOR_2ND_COLUMN, y, sensor->cell.source, attr);
+          if (attr) {
+            sensor->cell.source = checkIncDec(event, sensor->cell.source, 0, MIXSRC_LAST_TELEM, EE_MODEL|NO_INCDEC_MARKS, isCellsSource);
+          }
         }
         else {
           lcd_putsLeft(y, "Unit");
@@ -5857,7 +5872,12 @@ void menuModelSensor(uint8_t event)
         break;
 
       case SENSOR_FIELD_PRECISION:
-        sensor->prec = selectMenuItem(SENSOR_2ND_COLUMN, y, STR_PRECISION, "\005PREC0PREC1PREC2", sensor->prec, 0, 2, attr, event);
+        if (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula == TELEM_FORMULA_CELL) {
+          sensor->cell.index = selectMenuItem(SENSOR_2ND_COLUMN, y, "Cell index", "\007Lowest\0001\0     2\0     3\0     4\0     5\0     6\0     Highest", sensor->cell.index, 0, 7, attr, event);
+        }
+        else {
+          sensor->prec = selectMenuItem(SENSOR_2ND_COLUMN, y, STR_PRECISION, "\005PREC0PREC1PREC2", sensor->prec, 0, 2, attr, event);
+        }
         break;
 
       case SENSOR_FIELD_RATIO:

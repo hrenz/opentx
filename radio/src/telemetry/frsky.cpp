@@ -328,9 +328,9 @@ void telemetryWakeup()
 
 #if defined(CPUARM)
   for (int i=0; i<TELEM_VALUES_MAX; i++) {
-    TelemetrySensor & sensor = g_model.telemetrySensors[i];
+    const TelemetrySensor & sensor = g_model.telemetrySensors[i];
     if (sensor.type == TELEM_TYPE_CALCULATED) {
-      telemetryItems[i].eval();
+      telemetryItems[i].eval(sensor);
     }
   }
 #endif
@@ -564,6 +564,7 @@ void telemetryReset()
   setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 0, 100);
   setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 1, 200);
   setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0100, 1, 1000);
+  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0300, 1, 0x10010020, TELEM_INPUT_CELLS);
 #endif
 }
 

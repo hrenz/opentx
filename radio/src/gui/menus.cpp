@@ -591,8 +591,9 @@ void check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
   if (l_posVert == 0 || (l_posVert==2 && MAXCOL(vertpos_t(1)) >= HIDDEN_ROW) || (l_posVert==3 && MAXCOL(vertpos_t(1)) >= HIDDEN_ROW && MAXCOL(vertpos_t(2)) >= HIDDEN_ROW)) {
     s_pgOfs = 0;
   }
-  else if (menuTab && horTab) {
-    if (maxrow > LCD_LINES-1) {
+  else if (horTab) {
+    uint8_t max = menuTab ? LCD_LINES-1 : LCD_LINES-2;
+    if (maxrow > max) {
       while (1) {
         vertpos_t firstLine = 0;
         for (int numLines=0; firstLine<=maxrow && numLines<s_pgOfs; firstLine++) {
@@ -605,7 +606,7 @@ void check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
         }
         else {
           vertpos_t lastLine = firstLine;
-          for (int numLines=0; lastLine<=maxrow && numLines<LCD_LINES-1; lastLine++) {
+          for (int numLines=0; lastLine<=maxrow && numLines<max; lastLine++) {
             if (horTab[lastLine+1] != HIDDEN_ROW) {
               numLines++;
             }
@@ -1417,6 +1418,24 @@ bool isSourceAvailable(int source)
     return isTelemetryFieldAvailable((source-MIXSRC_FIRST_TELEM)/3);
 
   return true;
+}
+
+bool isCellsSource(int source)
+{
+  if (source == 0)
+    return true;
+
+  if (source>=MIXSRC_FIRST_TELEM && source<=MIXSRC_LAST_TELEM) {
+    source -= MIXSRC_FIRST_TELEM;
+    div_t qr = div(source, 3);
+    if (qr.rem != 0)
+      return false;
+    uint16_t id = g_model.telemetrySensors[qr.quot].id;
+    if (id >= 0x0300 && id <= 0x030f) // TODO this should go to frsky_sport.cpp!
+      return true;
+  }
+
+  return false;
 }
 
 bool isInputSourceAvailable(int source)

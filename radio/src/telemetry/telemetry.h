@@ -97,7 +97,7 @@ class TelemetryItem
       lastReceived = TELEMETRY_VALUE_UNAVAILABLE;
     }
 
-    void eval();
+    void eval(const TelemetrySensor & sensor);
 
     void setValue(int32_t value, uint8_t flags=0);
     bool isAvailable();

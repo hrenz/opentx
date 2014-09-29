@@ -1108,7 +1108,10 @@ enum TelemetrySensorInputFlags
 PACK(typedef struct {
   union {
     uint16_t id;                   // data identifier, for FrSky we can reuse existing ones. Source unit is derived from type.
-    int16_t  cell;                 // when formula=Cell
+    PACK(struct {
+      uint8_t source;
+      uint8_t index;
+    }) cell;
   };
   union {
     uint8_t instance;              // instance ID to allow handling multiple instances of same value type, for FrSky can be the physical ID of the sensor

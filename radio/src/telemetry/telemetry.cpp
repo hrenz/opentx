@@ -85,9 +85,43 @@ bool TelemetryItem::isOld()
   return (lastReceived == TELEMETRY_VALUE_OLD);
 }
 
-void TelemetryItem::eval()
+void TelemetryItem::eval(const TelemetrySensor & sensor)
 {
+  switch(sensor.formula) {
+    case TELEM_FORMULA_CELL:
+    {
+      TelemetryItem & cellsItem = telemetryItems[(sensor.cell.source-MIXSRC_FIRST_TELEM)/3];
+      if (cellsItem.isOld()) {
+        lastReceived = TELEMETRY_VALUE_OLD;
+      }
+      else {
+        uint8_t index = sensor.cell.index;
+        if (index == 0 || index == 7) {
+          bool lowest = (index == 0);
+          index = 0;
+          for (int i=0; i<cellsItem.cells.count; i++) {
+            if (cellsItem.cells.values[i].state) {
+              if (index == 0 || (lowest && cellsItem.cells.values[i].value < cellsItem.cells.values[index-1].value) || (!lowest && cellsItem.cells.values[i].value > cellsItem.cells.values[index-1].value)) {
+                index = i+1;
+              }
+            }
+            else {
+              index = 0;
+              break;
+            }
+          }
+        }
+        index -= 1;
+        if (index < cellsItem.cells.count && cellsItem.cells.values[index].state) {
+          setValue(cellsItem.cells.values[index].value, sensor.inputFlags);
+        }
+      }
+      break;
+    }
 
+    default:
+      break;
+  }
 }
 
 int getTelemetryIndex(TelemetryProtocol protocol, uint16_t id, uint8_t instance)
