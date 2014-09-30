@@ -129,62 +129,30 @@ static int luaGetDateTime(lua_State *L)
 
 static void luaGetValueAndPush(int src)
 {
+  getvalue_t value = getValue(src);
+
   if (src >= MIXSRC_FIRST_TELEM && src <= MIXSRC_LAST_TELEM) {
+    src = (src-MIXSRC_FIRST_TELEM) / 3;
     // telemetry values
-   if (!TELEMETRY_STREAMING()) {
+    if (TELEMETRY_STREAMING() && telemetryItems[src].isAvailable()) {
+      TelemetrySensor & telemetrySensor = g_model.telemetrySensors[src];
+      uint8_t prec;
+      value = telemetrySensor.getValue(value, prec);
+      if (prec==2)
+        lua_pushnumber(L, float(value)/100.0);
+      else if (prec==1)
+        lua_pushnumber(L, float(value)/10.0);
+      else
+        lua_pushinteger(L, value);
+    }
+    else {
       // telemetry not working, return zero for telemetry sources
       // except for "tx voltage"
       lua_pushinteger(L, (int)0);
-      return;
     }
   }
-
-  int idx = src;
-  switch (src) {
-#if 0
-    case MIXSRC_FIRST_TELEM-1+TELEM_TX_VOLTAGE:
-    case MIXSRC_FIRST_TELEM-1+TELEM_VFAS:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_VFAS:
-    case MIXSRC_FIRST_TELEM-1+TELEM_CELLS_SUM:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_CELLS_SUM:
-    case MIXSRC_FIRST_TELEM-1+TELEM_CURRENT:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MAX_CURRENT:
-    case MIXSRC_FIRST_TELEM-1+TELEM_ASPEED:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MAX_ASPEED:
-      // these need to be divided by 10
-      lua_pushnumber(L, getValue(src)/10.0);
-      break;
-
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_A1:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_A2:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_A3:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_A4:
-      idx -= TELEM_MIN_A1-TELEM_A1;
-      // no break
-    case MIXSRC_FIRST_TELEM-1+TELEM_A1:
-    case MIXSRC_FIRST_TELEM-1+TELEM_A2:
-    case MIXSRC_FIRST_TELEM-1+TELEM_A3:
-    case MIXSRC_FIRST_TELEM-1+TELEM_A4:
-      // convert raw Ax values to calibrated values
-      idx -= (MIXSRC_FIRST_TELEM+TELEM_A1-1);
-      lua_pushnumber(L, applyChannelRatio(idx, getValue(src))/100.0);
-      break;
-
-    case MIXSRC_FIRST_TELEM-1+TELEM_CELL:
-    case MIXSRC_FIRST_TELEM-1+TELEM_MIN_CELL:
-    case MIXSRC_FIRST_TELEM-1+TELEM_ALT:
-    case MIXSRC_FIRST_TELEM-1+TELEM_ACCx:
-    case MIXSRC_FIRST_TELEM-1+TELEM_ACCy:
-    case MIXSRC_FIRST_TELEM-1+TELEM_ACCz:
-    case MIXSRC_FIRST_TELEM-1+TELEM_VSPEED:
-      // these need to be divided by 100
-      lua_pushnumber(L, getValue(src)/100.0);
-      break;
-#endif
-    //TODO: add other values that need special treatment
-
-    default:
-      lua_pushinteger(L, getValue(src));
+  else {
+    lua_pushinteger(L, value);
   }
 }
 

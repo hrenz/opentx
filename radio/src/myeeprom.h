@@ -1090,7 +1090,7 @@ enum TelemetrySensorType
 enum TelemetrySensorFormula
 {
   TELEM_FORMULA_ADD,
-  TELEM_FORMULA_MEAN,
+  TELEM_FORMULA_AVERAGE,
   TELEM_FORMULA_CELL,
   TELEM_FORMULA_MAX=TELEM_FORMULA_CELL
 };
@@ -1106,13 +1106,7 @@ enum TelemetrySensorInputFlags
 };
 
 PACK(typedef struct {
-  union {
-    uint16_t id;                   // data identifier, for FrSky we can reuse existing ones. Source unit is derived from type.
-    PACK(struct {
-      uint8_t source;
-      uint8_t index;
-    }) cell;
-  };
+  uint16_t id;                   // data identifier, for FrSky we can reuse existing ones. Source unit is derived from type.
   union {
     uint8_t instance;              // instance ID to allow handling multiple instances of same value type, for FrSky can be the physical ID of the sensor
     uint8_t formula;
@@ -1124,10 +1118,24 @@ PACK(typedef struct {
   uint8_t  inputFlags:2;
   uint8_t  logs:1;
   uint8_t  spare:5;
-  uint16_t ratio;
-  int16_t  offset;
 
+  union {
+    PACK(struct {
+      uint16_t ratio;
+      int16_t  offset;
+    }) custom;
+    PACK(struct {
+      uint8_t source;
+      uint8_t index;
+      uint16_t spare;
+    }) cell;
+    PACK(struct {
+      uint8_t sources[4];
+    }) calc;
+    uint32_t param;
+  };
   void init(const char *label, uint8_t unit=UNIT_RAW, uint8_t inputFlags=0);
+  int32_t getValue(int32_t value, uint8_t & prec);
 
 }) TelemetrySensor;
 #endif

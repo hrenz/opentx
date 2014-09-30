@@ -90,7 +90,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
   switch(sensor.formula) {
     case TELEM_FORMULA_CELL:
     {
-      TelemetryItem & cellsItem = telemetryItems[(sensor.cell.source-MIXSRC_FIRST_TELEM)/3];
+      TelemetryItem & cellsItem = telemetryItems[sensor.cell.source-1];
       if (cellsItem.isOld()) {
         lastReceived = TELEMETRY_VALUE_OLD;
       }
@@ -116,6 +116,50 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
           setValue(cellsItem.cells.values[index].value, sensor.inputFlags);
         }
       }
+      break;
+    }
+
+    case TELEM_FORMULA_ADD:
+    case TELEM_FORMULA_AVERAGE:
+    {
+      int32_t value=0, count=0, available=0;
+      for (int i=0; i<4; i++) {
+        uint8_t source = sensor.calc.sources[i];
+        if (source) {
+          TelemetryItem & telemetryItem = telemetryItems[source-1];
+          if (sensor.formula == TELEM_FORMULA_ADD) {
+            if (!telemetryItem.isAvailable()) {
+              return;
+            }
+            else if (telemetryItem.isOld()) {
+              lastReceived = TELEMETRY_VALUE_OLD;
+              return;
+            }
+          }
+          else {
+            if (telemetryItem.isAvailable())
+              available = 1;
+            else
+              continue;
+            if (telemetryItem.isOld())
+              continue;
+            else
+              count += 1;
+          }
+          value += telemetryItem.value;
+        }
+      }
+      if (sensor.formula == TELEM_FORMULA_AVERAGE) {
+        if (count == 0) {
+          if (available)
+            lastReceived = TELEMETRY_VALUE_OLD;
+          return;
+        }
+        else {
+          value = (value + count/2) / count;
+        }
+      }
+      setValue(value, sensor.inputFlags);
       break;
     }
 
@@ -189,3 +233,28 @@ void TelemetrySensor::init(const char *label, uint8_t unit, uint8_t inputFlags)
   this->unit = unit;
   this->inputFlags = inputFlags;
 }
+
+int32_t TelemetrySensor::getValue(int32_t value, uint8_t & precision)
+{
+  if (type == TELEM_TYPE_CUSTOM) {
+    if (custom.ratio)
+      value *= custom.ratio;
+    value += custom.offset;
+  }
+  if (prec) {
+    precision = 1;
+    if (prec == 2) {
+      if (value >= 10000) {
+        value = div10_and_round(value);
+      }
+      else {
+        precision = 2;
+      }
+    }
+  }
+  else {
+    precision = 0;
+  }
+  return value;
+}
+

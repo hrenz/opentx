@@ -116,6 +116,7 @@ inline bool isTelemetryFieldAvailable(int index)
 void setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t instance, int32_t value, uint32_t flags=0);
 void delTelemetryIndex(uint8_t index);
 int availableTelemetryIndex();
+int32_t getTelemetryValue(uint8_t index, uint8_t & prec);
 
 void frskySportSetDefault(int index, uint16_t type, uint8_t instance);
 

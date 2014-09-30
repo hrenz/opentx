@@ -949,20 +949,13 @@ void putsTelemetryChannelValue(coord_t x, coord_t y, uint8_t channel, lcdint_t v
   TelemetryItem & telemetryItem = telemetryItems[channel];
   TelemetrySensor & telemetrySensor = g_model.telemetrySensors[channel];
   if (telemetryItem.isAvailable()) {
-    if (telemetrySensor.ratio) value *= telemetrySensor.ratio;
-    value += telemetrySensor.offset;
+    uint8_t prec;
+    value = telemetrySensor.getValue(value, prec);
     LcdFlags flags = att;
-    if (telemetrySensor.prec) {
+    if (prec==2)
+      flags |= PREC2;
+    else if (prec==1)
       flags |= PREC1;
-      if (telemetrySensor.prec == 2) {
-        if (value >= 10000) {
-          value = div10_and_round(value);
-        }
-        else {
-          flags |= PREC2;
-        }
-      }
-    }
     putsValueWithUnit(x, y, value, telemetrySensor.unit, flags);
   }
   else {

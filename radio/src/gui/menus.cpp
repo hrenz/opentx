@@ -1420,22 +1420,28 @@ bool isSourceAvailable(int source)
   return true;
 }
 
-bool isCellsSource(int source)
+bool isCellsSensor(int sensor)
 {
-  if (source == 0)
+  if (sensor == 0)
     return true;
 
-  if (source>=MIXSRC_FIRST_TELEM && source<=MIXSRC_LAST_TELEM) {
-    source -= MIXSRC_FIRST_TELEM;
-    div_t qr = div(source, 3);
-    if (qr.rem != 0)
-      return false;
-    uint16_t id = g_model.telemetrySensors[qr.quot].id;
-    if (id >= 0x0300 && id <= 0x030f) // TODO this should go to frsky_sport.cpp!
-      return true;
-  }
+  sensor -= 1;
+
+  uint16_t id = g_model.telemetrySensors[sensor].id;
+  if (id >= 0x0300 && id <= 0x030f) // TODO this should go to frsky_sport.cpp!
+    return true;
 
   return false;
+}
+
+bool isSensorAvailable(int sensor)
+{
+  if (sensor == 0)
+    return true;
+
+  sensor -= 1;
+
+  return isTelemetryFieldAvailable(sensor);
 }
 
 bool isInputSourceAvailable(int source)
