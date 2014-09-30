@@ -327,18 +327,19 @@ getvalue_t getValue(uint8_t i)
   else if (i<=MIXSRC_LAST_GVAR) return GVAR_VALUE(i-MIXSRC_GVAR1, getGVarFlightPhase(mixerCurrentFlightMode, i-MIXSRC_GVAR1));
 #endif
 
-  else if (i==MIXSRC_TX_VOLTAGE) return g_vbat100mV;
-
 #if defined(CPUARM)
+  else if (i==MIXSRC_TX_VOLTAGE) return g_vbat100mV;
   else if (i<MIXSRC_FIRST_TIMER) // TX_TIME + SPARES
   #if defined(RTCLOCK)
      return (g_rtcTime % SECS_PER_DAY) / 60; // number of minutes from midnight
   #else
      return 0;
   #endif
-#endif
-
   else if (i<=MIXSRC_LAST_TIMER) return timersStates[i-MIXSRC_FIRST_TIMER].val;
+#else
+  else if (i==MIXSRC_FIRST_TELEM-1+TELEM_TX_VOLTAGE) return g_vbat100mV;
+  else if (i<=MIXSRC_FIRST_TELEM-1+TELEM_TIMER2) return timersStates[i-MIXSRC_FIRST_TELEM+1-TELEM_TIMER1].val;
+#endif
 
 #if defined(CPUARM)
   else if (i<=MIXSRC_LAST_TELEM) {

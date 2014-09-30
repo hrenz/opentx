@@ -6376,18 +6376,30 @@ void menuModelTelemetry(uint8_t event)
         if (IS_BARS_SCREEN(screenIndex)) {
           FrSkyBarData & bar = g_model.frsky.screens[screenIndex].bars[lineIndex];
           source_t barSource = bar.source;
+#if defined(CPUARM)
           putsMixerSource(TELEM_COL1, y, barSource, m_posHorz==0 ? attr : 0);
           if (barSource) {
-            putsChannelValue(TELEM_BARS_COLMIN, y, barSource, convertBarTelemValue(barSource, bar.barMin), (m_posHorz==1 ? attr : 0) | LEFT);
-            putsChannelValue(TELEM_BARS_COLMAX, y, barSource, convertBarTelemValue(barSource, 255-bar.barMax), (m_posHorz==2 ? attr : 0) | LEFT);
+            putsChannelValue(TELEM_BARS_COLMIN, y, barSource-1, convertBarTelemValue(barSource, bar.barMin), (m_posHorz==1 ? attr : 0) | LEFT);
+            putsChannelValue(TELEM_BARS_COLMAX, y, barSource-1, convertBarTelemValue(barSource, 255-bar.barMax), (m_posHorz==2 ? attr : 0) | LEFT);
           }
+#else
+          lcd_putsiAtt(TELEM_COL1, y, STR_VTELEMCHNS, barSource, m_posHorz==0 ? attr : 0);
+          if (barSource) {
+            putsTelemetryChannelValue(TELEM_BARS_COLMIN, y, barSource-1, convertBarTelemValue(barSource, bar.barMin), (m_posHorz==1 ? attr : 0) | LEFT);
+            putsTelemetryChannelValue(TELEM_BARS_COLMAX, y, barSource-1, convertBarTelemValue(barSource, 255-bar.barMax), (m_posHorz==2 ? attr : 0) | LEFT);
+          }
+#endif
           else if (attr) {
             MOVE_CURSOR_FROM_HERE();
           }
           if (attr && (s_editMode>0 || p1valdiff)) {
             switch (m_posHorz) {
               case 0:
+#if defined(CPUARM)              
                 bar.source = CHECK_INCDEC_MODELVAR_ZERO_CHECK(event, barSource, MIXSRC_LAST_TELEM, isSourceAvailable);
+#else
+                bar.source = CHECK_INCDEC_MODELVAR_ZERO(event, barSource, TELEM_DISPLAY_MAX);
+#endif
                 if (checkIncDec_Ret) {
                   bar.barMin = 0;
                   bar.barMax = 255 - maxBarTelemValue(bar.source);
@@ -6407,16 +6419,23 @@ void menuModelTelemetry(uint8_t event)
         {
           for (uint8_t c=0; c<NUM_LINE_ITEMS; c++) {
             uint8_t cellAttr = (m_posHorz==c ? attr : 0);
+            source_t & value = g_model.frsky.screens[screenIndex].lines[lineIndex].sources[c];
 #if defined(PCBTARANIS)
-            uint16_t & value = g_model.frsky.screens[screenIndex].lines[lineIndex].sources[c];
             uint8_t pos[] = {TELEM_COL1, TELEM_COL2, TELEM_COL3};
 #else
             uint8_t pos[] = {INDENT_WIDTH, TELEM_COL2};
 #endif
+#if defined(CPUARM)
             putsMixerSource(pos[c], y, value, cellAttr);
             if (cellAttr && (s_editMode>0 || p1valdiff)) {
               CHECK_INCDEC_MODELVAR_ZERO_CHECK(event, value, MIXSRC_LAST_TELEM, isSourceAvailable);
             }
+#else
+            lcd_putsiAtt(pos[c], y, STR_VTELEMCHNS, value, cellAttr);
+            if (cellAttr && (s_editMode>0 || p1valdiff)) {
+              CHECK_INCDEC_MODELVAR_ZERO_CHECK(event, value, (lineIndex==3 && c==0) ? TELEM_STATUS_MAX : TELEM_DISPLAY_MAX, isTelemetrySourceAvailable);
+            }
+#endif      
           }
           if (attr && m_posHorz == NUM_LINE_ITEMS) {
             REPEAT_LAST_CURSOR_MOVE();

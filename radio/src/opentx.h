@@ -1640,7 +1640,7 @@ void checkFlashOnBeep();
 
 #if defined(FRSKY) || defined(CPUARM)
 void convertUnit(getvalue_t & val, uint8_t & unit); // TODO check FORCEINLINE on stock
-void putsTelemetryValue(coord_t x, coord_t y, lcdint_t val, uint8_t unit, LcdFlags att);
+void putsValueWithUnit(coord_t x, coord_t y, lcdint_t val, uint8_t unit, LcdFlags att);
 #else
 #define convertUnit(...)
 #endif

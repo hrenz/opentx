@@ -271,7 +271,11 @@ bool getLogicalSwitch(uint8_t idx)
 #if defined(FRSKY)
       // Telemetry
       if (v1 >= MIXSRC_FIRST_TELEM) {
+#if defined(CPUARM)
         if (!TELEMETRY_STREAMING() || IS_FAI_FORBIDDEN(v1-1)) {
+#else
+        if ((!TELEMETRY_STREAMING() && v1 >= MIXSRC_FIRST_TELEM+TELEM_FIRST_STREAMED_VALUE-1) || IS_FAI_FORBIDDEN(v1-1)) {
+#endif
           result = false;
           goto DurationAndDelayProcessing;
         }

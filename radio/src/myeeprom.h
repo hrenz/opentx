@@ -244,18 +244,18 @@ typedef int16_t gvar_t;
   #define GVAR_VALUE(x, p) g_model.flightModeData[p].gvars[x]
 #endif
 
-PACK(typedef struct t_TrainerMix {
+PACK(typedef struct {
   uint8_t srcChn:6; // 0-7 = ch1-8
   uint8_t mode:2;   // off,add-mode,subst-mode
   int8_t  studWeight;
 }) TrainerMix;
 
-PACK(typedef struct t_TrainerData {
+PACK(typedef struct {
   int16_t        calib[4];
   TrainerMix     mix[4];
 }) TrainerData;
 
-PACK(typedef struct t_FrSkyRSSIAlarm {
+PACK(typedef struct {
   int8_t    level:2;
   int8_t    value:6;
 }) FrSkyRSSIAlarm;
@@ -337,7 +337,7 @@ enum uartModes {
   #define EXTRA_GENERAL_FIELDS
 #endif
 
-PACK(typedef struct t_ModuleData {
+PACK(typedef struct {
   int8_t  rfProtocol;
   uint8_t channelsStart;
   int8_t  channelsCount; // 0=8 channels
@@ -706,18 +706,17 @@ PACK(typedef struct {
   char     name[LEN_EXPOMIX_NAME];
   int8_t   offset;
   CurveRef curve;
-  uint8_t  spare;
 }) ExpoData;
 #define MIN_EXPO_WEIGHT         -100
 #define EXPO_VALID(ed)          ((ed)->mode)
 #define EXPO_MODE_ENABLE(ed, v) (((v)<0 && ((ed)->mode&1)) || ((v)>=0 && ((ed)->mode&2)))
 #elif defined(CPUARM)
 PACK(typedef struct {
-  uint8_t  mode:2;         // 0=end, 1=pos, 2=neg, 3=both
-  uint8_t  chn:4;
-  uint8_t  curveMode:2;
+  uint16_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
+  uint16_t chn:3;
+  uint16_t curveMode:2;
+  uint16_t flightModes:9;
   int8_t   swtch;
-  uint16_t flightModes;
   int8_t   weight;
   char     name[LEN_EXPOMIX_NAME];
   int8_t   curveParam;
@@ -726,7 +725,7 @@ PACK(typedef struct {
 #define EXPO_VALID(ed)          ((ed)->mode)
 #define EXPO_MODE_ENABLE(ed, v) (((v)<0 && ((ed)->mode&1)) || ((v)>=0 && ((ed)->mode&2)))
 #elif defined(CPUM2560) || defined(CPUM2561)
-PACK(typedef struct t_ExpoData {
+PACK(typedef struct {
   uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
   uint8_t chn:2;
   uint8_t curveMode:1;
@@ -740,7 +739,7 @@ PACK(typedef struct t_ExpoData {
 #define EXPO_VALID(ed)          ((ed)->mode)
 #define EXPO_MODE_ENABLE(ed, v) (((v)<0 && ((ed)->mode&1)) || ((v)>=0 && ((ed)->mode&2)))
 #else
-PACK(typedef struct t_ExpoData {
+PACK(typedef struct {
   uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
   int8_t  swtch:6;
   uint8_t chn:2;
@@ -1003,7 +1002,7 @@ enum LogicalSwitchesFunctions {
 #define MAX_LS_DELAY    250 /*25s*/
 #define MAX_LS_ANDSW    SWSRC_LAST
 typedef int16_t ls_telemetry_value_t;
-PACK(typedef struct t_LogicalSwitchData { // Logical Switches data
+PACK(typedef struct { // Logical Switches data
   int8_t  v1;
   int16_t v2;
   int16_t v3;
@@ -1015,7 +1014,7 @@ PACK(typedef struct t_LogicalSwitchData { // Logical Switches data
 #else
 typedef uint8_t ls_telemetry_value_t;
 #define MAX_LS_ANDSW    15
-PACK(typedef struct t_LogicalSwitchData { // Logical Switches data
+PACK(typedef struct { // Logical Switches data
   int8_t  v1; //input
   int8_t  v2; //offset
   uint8_t func:4;
@@ -1143,6 +1142,10 @@ PACK(typedef struct {
 #if !defined(CPUARM)
 enum TelemetrySource {
   TELEM_NONE,
+  TELEM_TX_VOLTAGE,
+  TELEM_TIMER1,
+  TELEM_TIMER2,
+  TELEM_TIMER_MAX=TELEM_TIMER2,
   TELEM_RSSI_TX,        
   TELEM_RSSI_RX,                  LUA_EXPORT_TELEMETRY("rssi", "RSSI [more is better]")
   TELEM_A_FIRST,        
@@ -1191,7 +1194,11 @@ enum TelemetrySource {
   TELEM_GPS_TIME,
   TELEM_CSW_MAX = TELEM_MAX_POWER,
   TELEM_NOUSR_MAX = TELEM_A2,
+#if defined(FRSKY)
   TELEM_DISPLAY_MAX = TELEM_MAX_POWER,
+#else
+  TELEM_DISPLAY_MAX = TELEM_TIMER2, // because used also in PlayValue
+#endif
   TELEM_STATUS_MAX = TELEM_GPS_TIME,
   TELEM_FIRST_STREAMED_VALUE = TELEM_RSSI_TX,
 };
@@ -1221,37 +1228,31 @@ enum VarioSource {
 #elif defined(MAVLINK)
   #define NUM_TELEMETRY      4
 #else
-  #define NUM_TELEMETRY      TELEM_TIMER_MAX
+  #define NUM_TELEMETRY      TELEM_TIMER2
 #endif
 
-#if defined(PCBTARANIS)
-#define NUM_LINE_ITEMS 3
 PACK(typedef struct {
-  uint16_t  sources[NUM_LINE_ITEMS];
-}) FrSkyLineData;
-
-PACK(typedef struct {
-  uint16_t  source;
-  uint16_t  barMin;           // minimum for bar display
-  uint16_t  barMax;           // ditto for max display (would usually = ratio)
+  source_t source;
+  ls_telemetry_value_t barMin;           // minimum for bar display
+  ls_telemetry_value_t barMax;           // ditto for max display (would usually = ratio)
 }) FrSkyBarData;
 
+#if defined(PCBTARANIS)
+  #define NUM_LINE_ITEMS 3
+#else
+  #define NUM_LINE_ITEMS 2
+#endif
+
+PACK(typedef struct {
+  source_t sources[NUM_LINE_ITEMS];
+}) FrSkyLineData;
+
+#if defined(PCBTARANIS)
 #define MAX_TELEM_SCRIPT_INPUTS  8
 PACK(typedef struct {
-  char      file[LEN_SCRIPT_FILENAME];
-  int16_t   inputs[MAX_TELEM_SCRIPT_INPUTS];
+  char    file[LEN_SCRIPT_FILENAME];
+  int16_t inputs[MAX_TELEM_SCRIPT_INPUTS];
 }) TelemetryScriptData;
-#else
-#define NUM_LINE_ITEMS 2
-PACK(typedef struct {
-  uint8_t   sources[NUM_LINE_ITEMS];
-}) FrSkyLineData;
-
-PACK(typedef struct {
-  uint8_t   source;
-  uint8_t   barMin;           // minimum for bar display
-  uint8_t   barMax;           // ditto for max display (would usually = ratio)
-}) FrSkyBarData;
 #endif
 
 typedef union {
@@ -1334,7 +1335,7 @@ PACK(typedef struct {
 #define MAX_FRSKY_A_CHANNELS 2
 #define MAX_TELEMETRY_SCREENS 2
 #define IS_BARS_SCREEN(screenIndex) (g_model.frsky.screensType & (1<<(screenIndex)))
-PACK(typedef struct t_FrSkyData {
+PACK(typedef struct {
   FrSkyChannelData channels[MAX_FRSKY_A_CHANNELS];
   uint8_t usrProto:2; // Protocol in FrSky user data, 0=None, 1=FrSky hub, 2=WS HowHigh, 3=Halcyon
   uint8_t blades:2;   // How many blades for RPMs, 0=2 blades
@@ -1669,32 +1670,31 @@ enum MixSources {
   MIXSRC_CH16,
   MIXSRC_LAST_CH = MIXSRC_CH1+NUM_CHNOUT-1,
 
-  MIXSRC_GVAR1,                             LUA_EXPORT_MULTIPLE("gvar", "Global variable %d", MAX_GVARS)
-  MIXSRC_LAST_GVAR = MIXSRC_GVAR1+MAX_GVARS-1,
-
-  MIXSRC_TX_VOLTAGE,                        LUA_EXPORT_TELEMETRY("tx-voltage", "Transmitter battery voltage [volts]")
+  MIXSRC_FIRST_GVAR,
+  MIXSRC_GVAR1 = MIXSRC_FIRST_GVAR,         LUA_EXPORT_MULTIPLE("gvar", "Global variable %d", MAX_GVARS)
+  MIXSRC_LAST_GVAR = MIXSRC_FIRST_GVAR+MAX_GVARS-1,
 
 #if defined(CPUARM)
+  MIXSRC_TX_VOLTAGE,                        LUA_EXPORT_TELEMETRY("tx-voltage", "Transmitter battery voltage [volts]")
   MIXSRC_TX_TIME,                           LUA_EXPORT_TELEMETRY("clock", "RTC clock [minutes from midnight]")
   MIXSRC_RESERVE1,
   MIXSRC_RESERVE2,
   MIXSRC_RESERVE3,
   MIXSRC_RESERVE4,
   MIXSRC_RESERVE5,
-#endif
-
   MIXSRC_FIRST_TIMER,
   MIXSRC_TIMER1 = MIXSRC_FIRST_TIMER,       LUA_EXPORT_TELEMETRY("timer1", "Timer 1 value [seconds]")
   MIXSRC_TIMER2,                            LUA_EXPORT_TELEMETRY("timer2", "Timer 2 value [seconds]")
-#if defined(CPUARM)
   MIXSRC_TIMER3,                            LUA_EXPORT_TELEMETRY("timer3", "Timer 3 value [seconds]")
   MIXSRC_LAST_TIMER = MIXSRC_TIMER3,
-#else
-  MIXSRC_LAST_TIMER = MIXSRC_TIMER2,
 #endif
 
   MIXSRC_FIRST_TELEM,
-  MIXSRC_LAST_TELEM = MIXSRC_FIRST_TELEM+3*TELEM_VALUES_MAX-1,
+#if defined(CPUARM)
+  MIXSRC_LAST_TELEM = MIXSRC_FIRST_TELEM+3*TELEM_VALUES_MAX-1
+#else
+  MIXSRC_LAST_TELEM = MIXSRC_FIRST_TELEM+NUM_TELEMETRY-1
+#endif
 };
 
 #if defined(LUA)

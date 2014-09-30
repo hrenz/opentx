@@ -184,9 +184,11 @@ int getTelemetryIndex(TelemetryProtocol protocol, uint16_t id, uint8_t instance)
 
   if (available >= 0) {
     switch (protocol) {
+#if defined(FRSKY_SPORT)
       case TELEM_PROTO_FRSKY_SPORT:
         frskySportSetDefault(available, id, instance);
         break;
+#endif
 
       default:
         break;

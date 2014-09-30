@@ -760,6 +760,7 @@ void setGVarValue(uint8_t idx, int16_t value, int8_t phase)
 
 #endif
 
+#if defined(CPUARM)
 getvalue_t convert16bitsTelemValue(source_t channel, ls_telemetry_value_t value)
 {
   return value;
@@ -770,6 +771,7 @@ getvalue_t convert8bitsTelemValue(source_t channel, ls_telemetry_value_t value)
   return value;
 }
 
+#if defined(FRSKY)
 ls_telemetry_value_t minTelemValue(source_t channel)
 {
   return 0;
@@ -779,20 +781,21 @@ ls_telemetry_value_t maxTelemValue(source_t channel)
 {
   return 30000;
 }
+#endif
 
 ls_telemetry_value_t max8bitsTelemValue(source_t channel)
 {
   return 30000;
 }
 
-#if 0
-#if defined(CPUARM) && defined(FRSKY)
+#elif defined(FRSKY)
+
+/*
 ls_telemetry_value_t minTelemValue(uint8_t channel)
 {
   switch (channel) {
     case TELEM_TIMER1:
     case TELEM_TIMER2:
-    case TELEM_TIMER3:
       return -3600;
     case TELEM_ALT:
     case TELEM_MIN_ALT:
@@ -814,103 +817,33 @@ ls_telemetry_value_t minTelemValue(uint8_t channel)
       return 0;
   }
 }
-#endif
-
-#if defined(FRSKY)
+*/
 ls_telemetry_value_t maxTelemValue(uint8_t channel)
 {
   switch (channel) {
-#if defined(CPUARM)
-    case TELEM_TX_TIME:
-      return 24*60-1;
-    case TELEM_TIMER1:
-    case TELEM_TIMER2:
-    case TELEM_TIMER3:
-      return 60*60;
-#endif
     case TELEM_FUEL:
-#if defined(CPUARM)
-    case TELEM_SWR:
-#endif
     case TELEM_RSSI_TX:
     case TELEM_RSSI_RX:
       return 100;
     case TELEM_HDG:
       return 180;
-#if defined(CPUARM)
-    case TELEM_SPEED:
-    case TELEM_MAX_SPEED:
-    case TELEM_ASPEED:
-    case TELEM_MAX_ASPEED:
-      return 20000;
-    case TELEM_CELL:
-    case TELEM_MIN_CELL:
-      return 510;
-    case TELEM_CELLS_SUM:
-    case TELEM_MIN_CELLS_SUM:
-    case TELEM_VFAS:
-    case TELEM_MIN_VFAS:
-      return 1000;
-    case TELEM_VSPEED:
-      return 3000;
-    case TELEM_ACCx:
-    case TELEM_ACCy:
-    case TELEM_ACCz:
-      return 1000;
-    default:
-      return 30000;
-#else
     default:
       return 255;
-#endif
   }
 }
 #endif
 
-#if defined(CPUARM)
-getvalue_t convert16bitsTelemValue(uint8_t channel, ls_telemetry_value_t value)
-{
-  getvalue_t result;
-  switch (channel) {
-#if defined(FRSKY_SPORT)
-    case TELEM_ALT:
-      result = value * 100;
-      break;
-#endif
-    case TELEM_VSPEED:
-      result = value * 10;
-      break;
-
-    default:
-      result = value;
-      break;
-  }
-  return result;
-}
-
-ls_telemetry_value_t max8bitsTelemValue(uint8_t channel)
-{
-  return min<ls_telemetry_value_t>(255, maxTelemValue(channel));
-}
-#endif
-
+#if !defined(CPUARM)
 getvalue_t convert8bitsTelemValue(uint8_t channel, ls_telemetry_value_t value)
 {
   getvalue_t result;
   switch (channel) {
     case TELEM_TIMER1:
     case TELEM_TIMER2:
-#if defined(CPUARM)
-    case TELEM_TIMER3:
-#endif
       result = value * 5;
       break;
 #if defined(FRSKY)
     case TELEM_ALT:
-#if defined(CPUARM)
-      result = 100 * (value * 8 - 500);
-      break;
-#endif
     case TELEM_GPSALT:
     case TELEM_MAX_ALT:
     case TELEM_MIN_ALT:

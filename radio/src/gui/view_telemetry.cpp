@@ -77,11 +77,14 @@ void displayRssiLine()
 {
   if (TELEMETRY_STREAMING()) {
     lcd_hline(0, 55, 128, 0); // separator
-    uint8_t rssi = min((uint8_t)99, frskyData.rssi[1].value);
+    uint8_t rssi;
+#if !defined(CPUARM)
+    rssi = min((uint8_t)99, frskyData.rssi[1].value);
     lcd_putsLeft(STATUS_BAR_Y, STR_TX); lcd_outdezNAtt(4*FW+1, STATUS_BAR_Y, rssi, LEADING0, 2);
     lcd_rect(BAR_LEFT+1, 57, 38, 7);
     lcd_filled_rect(BAR_LEFT+1, 58, 4*rssi/11, 5, (rssi < getRssiAlarmValue(0)) ? DOTTED : SOLID);
-    rssi = min((uint8_t)99, frskyData.rssi[0].value);
+#endif
+    rssi = min((uint8_t)99, TELEMETRY_RSSI());
     lcd_puts(104, STATUS_BAR_Y, STR_RX); lcd_outdezNAtt(105+4*FW, STATUS_BAR_Y, rssi, LEADING0, 2);
     lcd_rect(65, 57, 38, 7);
     uint8_t v = 4*rssi/11;
@@ -165,7 +168,7 @@ uint8_t barCoord(int16_t value, int16_t min, int16_t max)
 
 void displayVoltagesScreen()
 {
-#if 0
+#if !defined(CPUARM)
 
   // Volts / Amps / Watts / mAh
   uint8_t analog = 0;
@@ -277,7 +280,7 @@ void displayAfterFlightScreen()
   }
   // Rssi
   lcd_putsLeft(line, STR_MINRSSI);
-#if defined(PCBTARANIS)
+#if defined(CPUARM)
   lcd_outdezNAtt(TELEM_2ND_COLUMN, line, TELEMETRY_RSSI_MIN(), LEFT|LEADING0, 2);
 #else
   lcd_puts(TELEM_2ND_COLUMN, line, STR_TX);
@@ -300,9 +303,12 @@ bool displayGaugesTelemetryScreen(FrSkyScreenData & screen)
       uint8_t y = barHeight+6+i*(barHeight+6);
       lcd_putsiAtt(0, y+barHeight-5, STR_VTELEMCHNS, source, 0);
       lcd_rect(BAR_LEFT, y, BAR_WIDTH+1, barHeight+2);
+#if defined(CPUARM)
       getvalue_t value = getValue(source);
-
-#if LCD_W >= 212
+#else
+      getvalue_t value = getValue(MIXSRC_FIRST_TELEM+source-1);
+#endif
+#if defined(PCBTARANIS)
       putsChannel(BAR_LEFT+2+BAR_WIDTH, y+barHeight-5, source, LEFT);
 #endif
 
@@ -366,6 +372,7 @@ bool displayGaugesTelemetryScreen(FrSkyScreenData & screen)
   return barHeight < 13;
 }
 
+#if defined(CPUARM)
 bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
 {
   // Custom Screen with numbers
@@ -383,24 +390,8 @@ bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
 #else
         lcd_vline(63, 8, 48);
 #endif
-        if (TELEMETRY_STREAMING()) {
-#if 0 // defined(FRSKY_HUB)
-          if (field == TELEM_ACC) {
-            lcd_putsLeft(STATUS_BAR_Y, STR_ACCEL);
-            lcd_outdezNAtt(4*FW, STATUS_BAR_Y, frskyData.hub.accelX, LEFT|PREC2);
-            lcd_outdezNAtt(10*FW, STATUS_BAR_Y, frskyData.hub.accelY, LEFT|PREC2);
-            lcd_outdezNAtt(16*FW, STATUS_BAR_Y, frskyData.hub.accelZ, LEFT|PREC2);
-            break;
-          }
-#if 0 // defined(GPS)
-          else if (field == TELEM_GPS_TIME) {
-            displayGpsTime();
-            break;
-          }
-#endif
-#endif
-        }
-        else {
+
+        if (!TELEMETRY_STREAMING()) {
           displayRssiLine();
           return fields_count;
         }
@@ -413,20 +404,14 @@ bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
         coord_t pos[] = {0, 65, 130};
 #endif
 
-#if defined(CPUARM)
         if (field >= MIXSRC_FIRST_TIMER && field <= MIXSRC_LAST_TIMER && i!=3) {
           // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
           putsStrIdx(pos[j], 1+FH+2*FH*i, "T", field-MIXSRC_FIRST_TIMER+1, 0);
         }
-        else
-#else
-        if (field >= MIXSRC_FIRST_TIMER && field <= MIXSRC_LAST_TIMER && i!=3) {
-          // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
-          field = field-MIXSRC_FIRST_TIMER+TELEM_T1;
+        else {
+          putsMixerSource(pos[j], 1+FH+2*FH*i, field, 0);
         }
-#endif
-        putsMixerSource(pos[j], 1+FH+2*FH*i, field, 0);
-
+        
         if (field >= MIXSRC_FIRST_TELEM) {
           TelemetryItem & telemetryItem = telemetryItems[(field-MIXSRC_FIRST_TELEM)/3]; // TODO macro to convert a source to a telemetry index
           if (!telemetryItem.isAvailable()) {
@@ -445,6 +430,76 @@ bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
   lcd_status_line();
   return fields_count;
 }
+#else
+bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
+{
+  // Custom Screen with numbers
+  uint8_t fields_count = 0;
+  for (uint8_t i=0; i<4; i++) {
+    for (uint8_t j=0; j<NUM_LINE_ITEMS; j++) {
+      uint8_t field = screen.lines[i].sources[j];
+      if (field > 0) {
+        fields_count++;
+      }
+      if (i==3) {
+#if LCD_W >= 212
+        lcd_vline(69, 8, 48);
+        lcd_vline(141, 8, 48);
+#else
+        lcd_vline(63, 8, 48);
+#endif
+        if (TELEMETRY_STREAMING()) {
+#if defined(FRSKY_HUB)
+          if (field == TELEM_ACC) {
+            lcd_putsLeft(STATUS_BAR_Y, STR_ACCEL);
+            lcd_outdezNAtt(4*FW, STATUS_BAR_Y, frskyData.hub.accelX, LEFT|PREC2);
+            lcd_outdezNAtt(10*FW, STATUS_BAR_Y, frskyData.hub.accelY, LEFT|PREC2);
+            lcd_outdezNAtt(16*FW, STATUS_BAR_Y, frskyData.hub.accelZ, LEFT|PREC2);
+            break;
+          }
+#if defined(GPS)
+          else if (field == TELEM_GPS_TIME) {
+            displayGpsTime();
+            break;
+          }
+#endif
+#endif
+        }
+        else {
+          displayRssiLine();
+          return fields_count;
+        }
+      }
+      if (field) {
+        getvalue_t value = getValue(MIXSRC_FIRST_TELEM+field-1);
+        uint8_t att = (i==3 ? NO_UNIT : DBLSIZE|NO_UNIT);
+#if LCD_W >= 212
+        coord_t pos[] = {0, 71, 143, 214};
+#else
+        coord_t pos[] = {0, 65, 130};
+#endif
+        putsTelemetryChannelValue(pos[j+1]-2, FH+2*FH*i, field-1, value, att);
+
+#if defined(CPUARM)
+        if (field >= TELEM_TIMER1 && field <= TELEM_TIMER_MAX && i!=3) {
+          // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
+          putsStrIdx(pos[j], 1+FH+2*FH*i, "T", field-TELEM_TIMER1+1, 0);
+        }
+        else
+#else
+        if (field >= TELEM_TIMER1 && field <= TELEM_TIMER_MAX && i!=3) {
+          // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
+          field = field-TELEM_TIMER1+TELEM_T1;
+        }
+#endif
+        lcd_putsiAtt(pos[j], 1+FH+2*FH*i, STR_VTELEMCHNS, field, 0);
+      }
+    }
+  }
+  lcd_status_line();
+  return fields_count;
+}
+#endif
 
 bool displayCustomTelemetryScreen(uint8_t index)
 {

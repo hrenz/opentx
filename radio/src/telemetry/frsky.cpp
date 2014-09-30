@@ -76,10 +76,12 @@ uint8_t telemetryProtocol = 255;
 #define IS_FRSKY_SPORT_PROTOCOL() (false)
 #endif
 
+#if defined(CPUARM)
 void FrskyValueWithMin::reset()
 {
   memclear(this, sizeof(*this));
 }
+#endif
 
 void FrskyValueWithMin::set(uint8_t value)
 {
@@ -494,7 +496,9 @@ void telemetryReset()
 #if defined(SIMU)
 
 #if defined(CPUARM)
+  #if !defined(REVPLUS)
   frskyData.swr.value = 30;
+  #endif
   frskyData.rssi.value = 75;
 #else
   frskyData.rssi[0].value = 75;
