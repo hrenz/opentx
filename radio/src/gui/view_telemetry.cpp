@@ -97,7 +97,7 @@ void displayRssiLine()
 }
 #endif
 
-#if defined(FRSKY) && defined(FRSKY_HUB) && defined(GPS)
+#if defined(FRSKY) && defined(FRSKY_HUB) && defined(GPS) && !defined(CPUARM)
 void displayGpsTime()
 {
   uint8_t att = (TELEMETRY_STREAMING() ? LEFT|LEADING0 : LEFT|LEADING0|BLINK);
@@ -139,7 +139,7 @@ void displayGpsCoord(uint8_t y, char direction, int16_t bp, int16_t ap)
     lcd_puts(TELEM_2ND_COLUMN, y, STR_VCSWFUNC+1/*----*/);
   }
 }
-#else
+#elif !defined(CPUARM)
 #define displayGpsTime()
 #define displayGpsCoord(...)
 #endif
@@ -149,41 +149,32 @@ NOINLINE uint8_t getRssiAlarmValue(uint8_t alarm)
   return (45 - 3*alarm + g_model.frsky.rssiAlarms[alarm].value);
 }
 
+#if !defined(CPUARM)
 void displayVoltageScreenLine(uint8_t y, uint8_t index)
 {
   putsStrIdx(0, y, STR_A, index+1, 0);
   if (TELEMETRY_STREAMING()) {
-#if 0
     putsTelemetryChannelValue(3*FW+6*FW+4, y-FH, index+TELEM_A1-1, frskyData.analog[index].value, DBLSIZE);
     lcd_putc(12*FW-1, y-FH, '<'); putsTelemetryChannelValue(17*FW, y-FH, index+TELEM_A1-1, frskyData.analog[index].min, NO_UNIT);
     lcd_putc(12*FW, y, '>');      putsTelemetryChannelValue(17*FW, y, index+TELEM_A1-1, frskyData.analog[index].max, NO_UNIT);
-#endif
   }
 }
+#endif
 
 uint8_t barCoord(int16_t value, int16_t min, int16_t max)
 {
   return limit((uint8_t)0, (uint8_t)(((int32_t)(BAR_WIDTH-1) * (value - min)) / (max - min)), (uint8_t)BAR_WIDTH);
 }
 
+#if !defined(CPUARM)
 void displayVoltagesScreen()
 {
-#if !defined(CPUARM)
-
   // Volts / Amps / Watts / mAh
   uint8_t analog = 0;
-#if defined(CPUARM)
-  lcd_putsiAtt(0, 2*FH, STR_VOLTSRC, g_model.frsky.voltsSource, 0);
-#else
   lcd_putsiAtt(0, 2*FH, STR_AMPSRC, g_model.frsky.voltsSource+1, 0);
-#endif
   switch (g_model.frsky.voltsSource) {
     case FRSKY_VOLTS_SOURCE_A1:
     case FRSKY_VOLTS_SOURCE_A2:
-#if defined(CPUARM)
-    case FRSKY_VOLTS_SOURCE_A3:
-    case FRSKY_VOLTS_SOURCE_A4:
-#endif
       displayVoltageScreenLine(2*FH, g_model.frsky.voltsSource);
       analog = 1+g_model.frsky.voltsSource;
       break;
@@ -202,10 +193,6 @@ void displayVoltagesScreen()
     switch(g_model.frsky.currentSource) {
       case FRSKY_CURRENT_SOURCE_A1:
       case FRSKY_CURRENT_SOURCE_A2:
-#if defined(CPUARM)
-      case FRSKY_CURRENT_SOURCE_A3:
-      case FRSKY_CURRENT_SOURCE_A4:
-#endif
         displayVoltageScreenLine(4*FH, g_model.frsky.currentSource-1);
         break;
 #if defined(FRSKY_HUB)
@@ -219,11 +206,7 @@ void displayVoltagesScreen()
     putsTelemetryChannelValue(3*FW+4+4*FW+6*FW+FW, 5*FH, TELEM_CONSUMPTION-1, frskyData.hub.currentConsumption, DBLSIZE);
   }
   else {
-#if defined(CPUARM)
-    displayVoltageScreenLine(analog > 0 ? 5*FH : 4*FH, analog==1+FRSKY_VOLTS_SOURCE_A1 ? FRSKY_VOLTS_SOURCE_A2 : FRSKY_VOLTS_SOURCE_A1);
-#else
     displayVoltageScreenLine(analog > 0 ? 5*FH : 4*FH, analog ? 2-analog : 0);
-#endif
     if (analog == 0) displayVoltageScreenLine(6*FH, 1);
   }
 
@@ -240,25 +223,8 @@ void displayVoltagesScreen()
       lcd_outdezNAtt(LCD_W, y, TELEMETRY_CELL_VOLTAGE(k), attr, 4);
       y += 1*FH;
     }
-#if defined(PCBTARANIS)
-    if (frskyData.hub.cellsCount > 6) {
-      y = 1*FH;
-      for (uint8_t k=6; k<frskyData.hub.cellsCount && k<12; k++) {
-#if defined(GAUGES)
-        uint8_t attr = (barsThresholds[THLD_CELL] && frskyData.hub.cellVolts[k] < barsThresholds[THLD_CELL]) ? BLINK|PREC2 : PREC2;
-#else
-        uint8_t attr = PREC2;
-#endif
-        lcd_outdezNAtt(LCD_W-3*FW-2, y, TELEMETRY_CELL_VOLTAGE(k), attr, 4);
-        y += 1*FH;
-      }
-      lcd_vline(LCD_W-6*FW-4, 8, 47);
-    } else
-#endif
     lcd_vline(LCD_W-3*FW-2, 8, 47);
   }
-#endif
-
 #endif
 
   displayRssiLine();
@@ -280,15 +246,12 @@ void displayAfterFlightScreen()
   }
   // Rssi
   lcd_putsLeft(line, STR_MINRSSI);
-#if defined(CPUARM)
-  lcd_outdezNAtt(TELEM_2ND_COLUMN, line, TELEMETRY_RSSI_MIN(), LEFT|LEADING0, 2);
-#else
   lcd_puts(TELEM_2ND_COLUMN, line, STR_TX);
   lcd_outdezNAtt(TELEM_2ND_COLUMN+3*FW, line, frskyData.rssi[1].min, LEFT|LEADING0, 2);
   lcd_puts(TELEM_2ND_COLUMN+6*FW, line, STR_RX);
   lcd_outdezNAtt(TELEM_2ND_COLUMN+9*FW, line, frskyData.rssi[0].min, LEFT|LEADING0, 2);
-#endif
 }
+#endif
 
 bool displayGaugesTelemetryScreen(FrSkyScreenData & screen)
 {
@@ -324,9 +287,7 @@ bool displayGaugesTelemetryScreen(FrSkyScreenData & screen)
         threshold = g_model.frsky.channels[source-TELEM_A1].alarms_value[0];
 #if defined(FRSKY_HUB)
       else {
-#if defined(CPUARM)
-        threshold = barsThresholds[source-TELEM_ALT];
-#elif defined(GAUGES)
+#if defined(GAUGES)
         threshold = convertBarTelemValue(source, barsThresholds[source-TELEM_ALT]);
 #endif
       }
@@ -408,6 +369,9 @@ bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
           // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
           putsStrIdx(pos[j], 1+FH+2*FH*i, "T", field-MIXSRC_FIRST_TIMER+1, 0);
         }
+        else if (field >= MIXSRC_FIRST_TELEM && isGPSSensor(1+(field-MIXSRC_FIRST_TELEM)/3) && telemetryItems[(field-MIXSRC_FIRST_TELEM)/3].isAvailable()) {
+          // we don't display GPS name, no space for it
+        }
         else {
           putsMixerSource(pos[j], 1+FH+2*FH*i, field, 0);
         }
@@ -480,18 +444,11 @@ bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
 #endif
         putsTelemetryChannelValue(pos[j+1]-2, FH+2*FH*i, field-1, value, att);
 
-#if defined(CPUARM)
-        if (field >= TELEM_TIMER1 && field <= TELEM_TIMER_MAX && i!=3) {
-          // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
-          putsStrIdx(pos[j], 1+FH+2*FH*i, "T", field-TELEM_TIMER1+1, 0);
-        }
-        else
-#else
         if (field >= TELEM_TIMER1 && field <= TELEM_TIMER_MAX && i!=3) {
           // there is not enough space on LCD for displaying "Tmr1" or "Tmr2" and still see the - sign, we write "T1" or "T2" instead
           field = field-TELEM_TIMER1+TELEM_T1;
         }
-#endif
+
         lcd_putsiAtt(pos[j], 1+FH+2*FH*i, STR_VTELEMCHNS, field, 0);
       }
     }
@@ -501,6 +458,22 @@ bool displayNumbersTelemetryScreen(FrSkyScreenData & screen)
 }
 #endif
 
+#if defined(CPUARM)
+bool displayCustomTelemetryScreen(uint8_t index)
+{
+  FrSkyScreenData & screen = g_model.frsky.screens[index];
+
+#if defined(GAUGES)
+  if (IS_BARS_SCREEN(s_frsky_view)) {
+    displayGaugesTelemetryScreen(screen);
+  }
+#endif
+
+  displayNumbersTelemetryScreen(screen);
+
+  return true;
+}
+#else
 bool displayCustomTelemetryScreen(uint8_t index)
 {
   FrSkyScreenData & screen = g_model.frsky.screens[index];
@@ -513,12 +486,19 @@ bool displayCustomTelemetryScreen(uint8_t index)
 
   return displayNumbersTelemetryScreen(screen);
 }
+#endif
 
 bool displayTelemetryScreen()
 {
 #if defined(LUA)
   if (TELEMETRY_SCREEN_TYPE(s_frsky_view) == TELEMETRY_SCREEN_TYPE_SCRIPT) {
-    return ZEXIST(g_model.frsky.screens[s_frsky_view].script.file);
+    return true;
+  }
+#endif
+
+#if defined(CPUARM)
+  if (TELEMETRY_SCREEN_TYPE(s_frsky_view) == TELEMETRY_SCREEN_TYPE_NONE) {
+    return false;
   }
 #endif
 
@@ -527,10 +507,14 @@ bool displayTelemetryScreen()
   if (s_frsky_view < MAX_TELEMETRY_SCREENS) {
     return displayCustomTelemetryScreen(s_frsky_view);
   }
+
+#if !defined(CPUARM)
   if (s_frsky_view == TELEMETRY_VOLTAGES_SCREEN) {
     displayVoltagesScreen();
   }
-#if defined(FRSKY_HUB)
+#endif
+
+#if !defined(CPUARM) && defined(FRSKY_HUB)
   else {
     displayAfterFlightScreen();
   }
@@ -551,11 +535,11 @@ enum NavigationDirection {
 void decrTelemetryScreen()
 {
   if (s_frsky_view-- == 0)
-    s_frsky_view = FRSKY_VIEW_MAX;
+    s_frsky_view = TELEMETRY_VIEW_MAX;
 }
 void incrTelemetryScreen()
 {
-  if (s_frsky_view++ == FRSKY_VIEW_MAX)
+  if (s_frsky_view++ == TELEMETRY_VIEW_MAX)
     s_frsky_view = 0;
 }
 #endif
@@ -603,19 +587,26 @@ void menuTelemetryFrsky(uint8_t event)
   }
 
 #if defined(CPUARM)
-  do {
+  for (int i=0; i<=TELEMETRY_SCREEN_TYPE_MAX; i++) {
     if (direction == up) {
       if (s_frsky_view-- == 0)
-        s_frsky_view = FRSKY_VIEW_MAX;
+        s_frsky_view = TELEMETRY_VIEW_MAX;
     }
     else if (direction == down) {
-      if (s_frsky_view++ == FRSKY_VIEW_MAX)
+      if (s_frsky_view++ == TELEMETRY_VIEW_MAX)
         s_frsky_view = 0;
     }
     else {
       direction = down;
     }
-  } while (!displayTelemetryScreen());
+    if (displayTelemetryScreen()) {
+      return;
+    }
+  }
+
+  lcdDrawTelemetryTopBar();
+  lcd_puts(8*FW, 3*FH, "No Telemetry Screens");
+  displayRssiLine();
 #else
   if (!displayTelemetryScreen()) {
     putEvent(event == EVT_KEY_BREAK(KEY_UP) ? event : EVT_KEY_BREAK(KEY_DOWN));

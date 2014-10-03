@@ -119,6 +119,20 @@ PACK(typedef struct {
   uint8_t  spare[2];
   int8_t   curveParam;
 }) ExpoData_v215;
+PACK(typedef struct {
+  uint8_t  srcRaw;
+  uint16_t scale;
+  uint8_t  chn;
+  int8_t   swtch;
+  uint16_t flightModes;
+  int8_t   weight;
+  int8_t   carryTrim:6;
+  uint8_t  mode:2;
+  char     name[LEN_EXPOMIX_NAME];
+  int8_t   offset;
+  CurveRef curve;
+  uint8_t  spare;
+}) ExpoData_v216;
 #else
 PACK(typedef struct {
   uint8_t  mode;         // 0=end, 1=pos, 2=neg, 3=both
@@ -130,6 +144,16 @@ PACK(typedef struct {
   char     name[LEN_EXPOMIX_NAME];
   int8_t   curveParam;
 }) ExpoData_v215;
+PACK(typedef struct {
+  uint8_t  mode:2;         // 0=end, 1=pos, 2=neg, 3=both
+  uint8_t  chn:4;
+  uint8_t  curveMode:2;
+  int8_t   swtch;
+  uint16_t flightModes;
+  int8_t   weight;
+  char     name[LEN_EXPOMIX_NAME];
+  int8_t   curveParam;
+}) ExpoData_v216;
 #endif
 
 #if defined(PCBTARANIS)
@@ -322,13 +346,28 @@ PACK(typedef struct {
 #endif
 
 PACK(typedef struct {
+  uint8_t    source;
+  uint8_t    barMin;           // minimum for bar display
+  uint8_t    barMax;           // ditto for max display (would usually = ratio)
+}) FrSkyBarData_v215;
+
+PACK(typedef struct {
+  uint8_t    sources[NUM_LINE_ITEMS];
+}) FrSkyLineData_v215;
+
+typedef union {
+  FrSkyBarData_v215  bars[4];
+  FrSkyLineData_v215 lines[4];
+} FrSkyScreenData_v215;
+
+PACK(typedef struct {
   FrSkyChannelData channels[2];
   uint8_t usrProto; // Protocol in FrSky user data, 0=None, 1=FrSky hub, 2=WS HowHigh, 3=Halcyon
   uint8_t voltsSource;
   uint8_t blades;   // How many blades for RPMs, 0=2 blades, 1=3 blades
   uint8_t currentSource;
   uint8_t screensType;
-  FrSkyScreenData screens[3];
+  FrSkyScreenData_v215 screens[3];
   uint8_t varioSource;
   int8_t  varioCenterMax;
   int8_t  varioCenterMin;
@@ -345,7 +384,7 @@ PACK(typedef struct {
   int8_t blades;    // How many blades for RPMs, 0=2 blades
   uint8_t currentSource;
   uint8_t screensType; // 2bits per screen (None/Gauges/Numbers/Script)
-  FrSkyScreenData screens[3];
+  FrSkyScreenData_v215 screens[3];
   uint8_t varioSource;
   int8_t  varioCenterMax;
   int8_t  varioCenterMin;
@@ -421,7 +460,7 @@ PACK(typedef struct {
   BeepANACenter beepANACenter;        // 1<<0->A1.. 1<<6->A7
   MixData_v216 mixData[MAX_MIXERS];
   LimitData_v216 limitData[NUM_CHNOUT];
-  ExpoData  expoData[MAX_EXPOS];
+  ExpoData_v216  expoData[MAX_EXPOS];
 
   CURVDATA  curves[MAX_CURVES];
   int8_t    points[NUM_POINTS];
@@ -815,7 +854,7 @@ void ConvertModel_215_to_216(ModelData &model)
   int indexes[NUM_STICKS] = { 0, 0, 0, 0 };
 #endif
   for (uint8_t i=0; i<32; i++) {
-    ExpoData * expo = &newModel.expoData[i];
+    ExpoData_v216 * expo = &newModel.expoData[i];
     ExpoData_v215 * oldExpo = &oldModel.expoData[i];
     if (oldExpo->mode) {
 #if defined(PCBTARANIS)
@@ -1201,10 +1240,22 @@ void ConvertModel_216_to_217(ModelData &model)
 #endif
   }
   for (int i=0; i<MAX_EXPOS; i++) {
-    newModel.expoData[i] = oldModel.expoData[i];
 #if defined(PCBTARANIS)
     newModel.expoData[i].srcRaw = ConvertSource_216_to_217(oldModel.expoData[i].srcRaw);
+    newModel.expoData[i].scale = oldModel.expoData[i].scale;
+    newModel.expoData[i].carryTrim = oldModel.expoData[i].carryTrim;
+    newModel.expoData[i].curve = oldModel.expoData[i].curve;
+    newModel.expoData[i].offset = oldModel.expoData[i].offset;
+#else
+    newModel.expoData[i].curveMode = oldModel.expoData[i].curveMode;
+    newModel.expoData[i].curveParam = oldModel.expoData[i].curveParam;
 #endif
+    newModel.expoData[i].chn = oldModel.expoData[i].chn;
+    newModel.expoData[i].swtch = oldModel.expoData[i].swtch;
+    newModel.expoData[i].flightModes = oldModel.expoData[i].flightModes;
+    newModel.expoData[i].weight = oldModel.expoData[i].weight;
+    newModel.expoData[i].mode = oldModel.expoData[i].mode;
+    memcpy(newModel.expoData[i].name, oldModel.expoData[i].name, sizeof(newModel.expoData[i].name));
   }
   memcpy(newModel.curves, oldModel.curves, sizeof(newModel.curves));
   memcpy(newModel.points, oldModel.points, sizeof(newModel.points));

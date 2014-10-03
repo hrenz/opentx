@@ -989,3 +989,6 @@
 #define ZSTR_ASPD              "ASpd"
 #define ZSTR_GSPD              "GSpd"
 #define ZSTR_CELLS             "Cels"
+#define ZSTR_GPSALT            "GAlt"
+#define ZSTR_GPSDATETIME       "Date"
+#define ZSTR_GPS               "GPS"

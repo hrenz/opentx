@@ -1414,13 +1414,18 @@ bool isSourceAvailable(int source)
   if (source>=MIXSRC_RESERVE1 && source<=MIXSRC_RESERVE5)
     return false;
 
-  if (source>=MIXSRC_FIRST_TELEM && source<=MIXSRC_LAST_TELEM)
-    return isTelemetryFieldAvailable((source-MIXSRC_FIRST_TELEM)/3);
+  if (source>=MIXSRC_FIRST_TELEM && source<=MIXSRC_LAST_TELEM) {
+    div_t qr = div(source-MIXSRC_FIRST_TELEM, 3);
+    if (qr.rem == 0)
+      return isTelemetryFieldAvailable(qr.quot);
+    else
+      return isMinMaxTelemetryFieldAvailable(qr.quot);
+  }
 
   return true;
 }
 
-bool isCellsSensor(int sensor)
+bool isSensorInRange(int sensor, unsigned int first, unsigned int last)
 {
   if (sensor == 0)
     return true;
@@ -1428,10 +1433,30 @@ bool isCellsSensor(int sensor)
   sensor -= 1;
 
   uint16_t id = g_model.telemetrySensors[sensor].id;
-  if (id >= 0x0300 && id <= 0x030f) // TODO this should go to frsky_sport.cpp!
+  if (id >= first && id <= last) // TODO this should go to frsky_sport.cpp!
     return true;
 
   return false;
+}
+
+bool isCellsSensor(int sensor)
+{
+  return isSensorInRange(sensor, 0x0300, 0x030f);
+}
+
+bool isGPSSensor(int sensor)
+{
+  return isSensorInRange(sensor, 0x0800, 0x080f);
+}
+
+bool isAltSensor(int sensor)
+{
+  if (sensor == 0)
+    return true;
+
+  sensor -= 1;
+
+  return g_model.telemetrySensors[sensor].unit == UNIT_DIST;
 }
 
 bool isSensorAvailable(int sensor)

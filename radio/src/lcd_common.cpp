@@ -947,19 +947,94 @@ void putsValueWithUnit(coord_t x, coord_t y, lcdint_t val, uint8_t unit, LcdFlag
   }
 }
 
+void displayGpsCoord(coord_t x, coord_t y, char direction, int16_t bp, int16_t ap, LcdFlags att, bool seconds=true)
+{
+    if (!direction) direction = '-';
+    lcd_outdezAtt(x, y, bp / 100, att); // ddd before '.'
+    lcd_putcAtt(lcdLastPos, y, '@', att);
+    uint8_t mn = bp % 100; // TODO div_t
+    if (g_eeGeneral.gpsFormat == 0) {
+      lcd_outdezNAtt(lcdNextPos, y, mn, att|LEFT|LEADING0, 2); // mm before '.'
+      lcd_vline(lcdLastPos, y, 2);
+      if (seconds) {
+        uint16_t ss = ap * 6 / 10;
+        lcd_outdezNAtt(lcdLastPos+3, y, ss / 100, att|LEFT|LEADING0, 2); // ''
+        lcd_plot(lcdLastPos, y+FH-2, 0); // small decimal point
+        lcd_outdezNAtt(lcdLastPos+2, y, ss % 100, att|LEFT|LEADING0, 2); // ''
+        lcd_vline(lcdLastPos, y, 2);
+        lcd_vline(lcdLastPos+2, y, 2);
+      }
+      lcd_putc(lcdLastPos+2, y, direction);
+    }
+    else {
+      lcd_outdezNAtt(lcdLastPos+FW, y, mn, att|LEFT|LEADING0, 2); // mm before '.'
+      lcd_plot(lcdLastPos, y+FH-2, 0); // small decimal point
+      lcd_outdezNAtt(lcdLastPos+2, y, ap, att|LEFT|UNSIGN|LEADING0, 4); // after '.'
+      lcd_putc(lcdLastPos+1, y, direction);
+    }
+}
+
+void displayDate(coord_t x, coord_t y, TelemetryItem & telemetryItem, LcdFlags att)
+{
+  if (att & DBLSIZE) {
+    x -= 42;
+    att &= ~0x0F00; // TODO constant
+    lcd_outdezNAtt(x, y, telemetryItem.datetime.day, att|LEADING0|LEFT, 2);
+    lcd_putcAtt(lcdLastPos-1, y, '-', att);
+    lcd_outdezNAtt(lcdNextPos-1, y, telemetryItem.datetime.month, att|LEFT, 2);
+    lcd_putcAtt(lcdLastPos-1, y, '-', att);
+    lcd_outdezAtt(lcdNextPos-1, y, telemetryItem.datetime.year, att|LEFT);
+    y += FH;
+    lcd_outdezNAtt(x, y, telemetryItem.datetime.hour, att|LEADING0|LEFT, 2);
+    lcd_putcAtt(lcdLastPos, y, ':', att);
+    lcd_outdezNAtt(lcdNextPos, y, telemetryItem.datetime.min, att|LEADING0|LEFT, 2);
+    lcd_putcAtt(lcdLastPos, y, ':', att);
+    lcd_outdezNAtt(lcdNextPos, y, telemetryItem.datetime.sec, att|LEADING0|LEFT, 2);
+  }
+  else {
+    lcd_outdezNAtt(x, y, telemetryItem.datetime.hour, att|LEADING0|LEFT, 2);
+    lcd_putcAtt(lcdLastPos, y, ':', att);
+    lcd_outdezNAtt(lcdNextPos, y, telemetryItem.datetime.min, att|LEADING0|LEFT, 2);
+    lcd_putcAtt(lcdLastPos, y, ':', att);
+    lcd_outdezNAtt(lcdNextPos, y, telemetryItem.datetime.sec, att|LEADING0|LEFT, 2);
+  }
+}
+
+void displayGpsCoords(coord_t x, coord_t y, TelemetryItem & telemetryItem, LcdFlags att)
+{
+  if (att & DBLSIZE) {
+    x -= (g_eeGeneral.gpsFormat == 0 ? 54 : 51);
+    att &= ~0x0F00; // TODO constant
+    displayGpsCoord(x, y, telemetryItem.gps.longitudeEW, telemetryItem.gps.longitude_bp, telemetryItem.gps.longitude_ap, att);
+    displayGpsCoord(x, y+FH, telemetryItem.gps.latitudeNS, telemetryItem.gps.latitude_bp, telemetryItem.gps.latitude_ap, att);
+  }
+  else {
+    displayGpsCoord(x, y, telemetryItem.gps.longitudeEW, telemetryItem.gps.longitude_bp, telemetryItem.gps.longitude_ap, att, false);
+    displayGpsCoord(lcdNextPos+FWNUM, y, telemetryItem.gps.latitudeNS, telemetryItem.gps.latitude_bp, telemetryItem.gps.latitude_ap, att, false);
+  }
+}
+
 void putsTelemetryChannelValue(coord_t x, coord_t y, uint8_t channel, lcdint_t value, LcdFlags att)
 {
   TelemetryItem & telemetryItem = telemetryItems[channel];
   TelemetrySensor & telemetrySensor = g_model.telemetrySensors[channel];
   if (telemetryItem.isAvailable()) {
-    uint8_t prec;
-    value = telemetrySensor.getValue(value, prec);
-    LcdFlags flags = att;
-    if (prec==2)
-      flags |= PREC2;
-    else if (prec==1)
-      flags |= PREC1;
-    putsValueWithUnit(x, y, value, telemetrySensor.unit, flags);
+    if (telemetrySensor.id >= 0x0850 && telemetrySensor.id <= 0x085f) { // TODO frsky_sport.cpp
+      displayDate(x, y, telemetryItem, att);
+    }
+    else if (telemetrySensor.id >= 0x0800 && telemetrySensor.id <= 0x080f) { // TODO frsky_sport.cpp
+      displayGpsCoords(x, y, telemetryItem, att);
+    }
+    else {
+      uint8_t prec;
+      value = telemetrySensor.getValue(value, prec);
+      LcdFlags flags = att;
+      if (prec==2)
+        flags |= PREC2;
+      else if (prec==1)
+        flags |= PREC1;
+      putsValueWithUnit(x, y, value, telemetrySensor.unit, flags);
+    }
   }
   else {
     lcd_putsAtt(x, y, "---", att); // TODO shortcut

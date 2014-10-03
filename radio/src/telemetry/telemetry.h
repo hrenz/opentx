@@ -67,18 +67,58 @@ PACK(struct CellValue
 class TelemetryItem
 {
   public:
-    int32_t value;           // value, stored as uint32_t but interpreted accordingly to type
-    int32_t min;             // min store
-    int32_t max;             // max store
+    union {
+      int32_t  value;           // value, stored as uint32_t but interpreted accordingly to type
+      uint32_t distFromEarthAxis;
+    };
+
+    union {
+      int32_t min;             // min store
+      uint32_t pilotLongitude;
+    };
+
+    union {
+      int32_t max;             // max store
+      uint32_t pilotLatitude;
+    };
+
     uint8_t lastReceived;    // for detection of sensor loss
 
     union {
       int32_t  offsetAuto;
       int32_t  filterValues[TELEMETRY_AVERAGE_COUNT];
       struct {
-        uint8_t  count;
+        uint8_t   count;
         CellValue values[6];
       } cells;
+      struct {
+        uint8_t  datestate;
+        uint16_t year;
+        uint8_t  month;
+        uint8_t  day;
+        uint8_t  timestate;
+        uint8_t  hour;
+        uint8_t  min;
+        uint8_t  sec;
+      } datetime;
+      struct {
+        uint16_t longitude_bp;
+        uint16_t longitude_ap;
+        char     longitudeEW;
+        uint16_t latitude_bp;
+        uint16_t latitude_ap;
+        char     latitudeNS;
+        // pilot longitude is stored in min
+        // pilot latitude is stored in max
+        // distFromEarthAxis is stored in value
+        void extractLatitudeLongitude(uint32_t * latitude, uint32_t * longitude)
+        {
+          div_t qr = div(latitude_bp, 100);
+          *latitude = ((uint32_t)(qr.quot) * 1000000) + (((uint32_t)(qr.rem) * 10000 + latitude_ap) * 5) / 3;
+          qr = div(longitude_bp, 100);
+          *longitude = ((uint32_t)(qr.quot) * 1000000) + (((uint32_t)(qr.rem) * 10000 + longitude_ap) * 5) / 3;
+        }
+      } gps;
     };
 
     static uint8_t now()
@@ -111,6 +151,18 @@ inline bool isTelemetryFieldAvailable(int index)
 {
   TelemetrySensor & sensor = g_model.telemetrySensors[index];
   return sensor.type == TELEM_TYPE_CALCULATED || sensor.id != 0;
+}
+
+inline bool isMinMaxTelemetryFieldAvailable(int index)
+{
+  TelemetrySensor & sensor = g_model.telemetrySensors[index];
+  if (sensor.type == TELEM_TYPE_CALCULATED)
+    return true;
+  if (sensor.id >= 0x0800 && sensor.id <= 0x080f) // TODO in frsky_sport.cpp
+    return false;
+  if (sensor.id >= 0x0850 && sensor.id <= 0x085f) // TODO in frsky_sport.cpp
+    return false;
+  return (sensor.id != 0);
 }
 
 void setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t instance, int32_t value, uint32_t flags=0);

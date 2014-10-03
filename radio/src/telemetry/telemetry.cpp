@@ -33,6 +33,64 @@ void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
       return;
     }
   }
+  else if (flags == TELEM_INPUT_DATETIME) {
+    uint32_t data = uint32_t(newVal);
+    if (data & 0x000000ff) {
+      datetime.year = (uint16_t) ((data & 0xff000000) >> 24);
+      datetime.month = (uint8_t) ((data & 0x00ff0000) >> 16);
+      datetime.day = (uint8_t) ((data & 0x0000ff00) >> 8);
+      datetime.datestate = 1;
+    }
+    else {
+      datetime.hour = ((uint8_t) ((data & 0xff000000) >> 24) + g_eeGeneral.timezone + 24) % 24;
+      datetime.min = (uint8_t) ((data & 0x00ff0000) >> 16);
+      datetime.sec = (uint16_t) ((data & 0x0000ff00) >> 8);
+      datetime.timestate = 1;
+    }
+    if (datetime.year == 0) {
+      return;
+    }
+    newVal = 0;
+  }
+  else if (flags == TELEM_INPUT_GPS) {
+    uint32_t gps_long_lati_data = uint32_t(newVal);
+    uint32_t gps_long_lati_b1w, gps_long_lati_a1w;
+    gps_long_lati_b1w = (gps_long_lati_data & 0x3fffffff) / 10000;
+    gps_long_lati_a1w = (gps_long_lati_data & 0x3fffffff) % 10000;
+    switch ((gps_long_lati_data & 0xc0000000) >> 30) {
+      case 0:
+        gps.latitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
+        gps.latitude_ap = gps_long_lati_a1w;
+        gps.latitudeNS = 'N';
+        break;
+      case 1:
+        gps.latitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
+        gps.latitude_ap = gps_long_lati_a1w;
+        gps.latitudeNS = 'S';
+        break;
+      case 2:
+        gps.longitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
+        gps.longitude_ap = gps_long_lati_a1w;
+        gps.longitudeEW = 'E';
+        break;
+      case 3:
+        gps.longitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
+        gps.longitude_ap = gps_long_lati_a1w;
+        gps.longitudeEW = 'W';
+        break;
+    }
+    if (gps.longitudeEW && gps.latitudeNS) {
+      if (!distFromEarthAxis) {
+        gps.extractLatitudeLongitude(&pilotLatitude, &pilotLongitude);
+        uint32_t lat = pilotLatitude / 10000;
+        uint32_t angle2 = (lat*lat) / 10000;
+        uint32_t angle4 = angle2 * angle2;
+        distFromEarthAxis = 139*(((uint32_t)10000000-((angle2*(uint32_t)123370)/81)+(angle4/25))/12500);
+      }
+      lastReceived = now();
+    }
+    return;
+  }
   else if (flags == TELEM_INPUT_FLAGS_AUTO_OFFSET) {
     if (!isAvailable()) {
       offsetAuto = -newVal;
@@ -118,6 +176,51 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
       }
       break;
     }
+
+    case TELEM_FORMULA_DIST:
+      if (sensor.dist.gps) {
+        TelemetryItem gpsItem = telemetryItems[sensor.dist.gps-1];
+        TelemetryItem * altItem = NULL;
+        if (!gpsItem.isAvailable()) {
+          return;
+        }
+        else if (gpsItem.isOld()) {
+          lastReceived = TELEMETRY_VALUE_OLD;
+          return;
+        }
+        if (sensor.dist.alt) {
+          altItem = &telemetryItems[sensor.dist.alt-1];
+          if (!altItem->isAvailable()) {
+            return;
+          }
+          else if (altItem->isOld()) {
+            lastReceived = TELEMETRY_VALUE_OLD;
+            return;
+          }
+        }
+
+        uint32_t latitude, longitude;
+        gpsItem.gps.extractLatitudeLongitude(&latitude, &longitude);
+
+        uint32_t angle = (latitude > gpsItem.pilotLatitude) ? latitude - gpsItem.pilotLatitude : gpsItem.pilotLatitude - latitude;
+        uint32_t dist = EARTH_RADIUS * angle / 1000000;
+        uint32_t result = dist*dist;
+
+        angle = (longitude > gpsItem.pilotLongitude) ? longitude - gpsItem.pilotLongitude : gpsItem.pilotLongitude - longitude;
+        dist = gpsItem.distFromEarthAxis * angle / 1000000;
+        result += dist*dist;
+
+        if (altItem) {
+          dist = abs(altItem->value);
+          uint8_t prec = g_model.telemetrySensors[sensor.dist.alt-1].prec;
+          if (prec > 0)
+            dist /= (prec==2 ? 100 : 10);
+          result += dist*dist;
+        }
+
+        setValue(isqrt32(result), sensor.inputFlags);
+      }
+      break;
 
     case TELEM_FORMULA_ADD:
     case TELEM_FORMULA_AVERAGE:

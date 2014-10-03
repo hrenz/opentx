@@ -1091,7 +1091,8 @@ enum TelemetrySensorFormula
   TELEM_FORMULA_ADD,
   TELEM_FORMULA_AVERAGE,
   TELEM_FORMULA_CELL,
-  TELEM_FORMULA_MAX=TELEM_FORMULA_CELL
+  TELEM_FORMULA_DIST,
+  TELEM_FORMULA_MAX=TELEM_FORMULA_DIST
 };
 
 enum TelemetrySensorInputFlags
@@ -1102,6 +1103,8 @@ enum TelemetrySensorInputFlags
   TELEM_INPUT_FLAGS_MAX=TELEM_INPUT_FLAGS_FILTERING,
   TELEM_INPUT_FLAGS_HIDDEN,
   TELEM_INPUT_CELLS,
+  TELEM_INPUT_DATETIME,
+  TELEM_INPUT_GPS
 };
 
 PACK(typedef struct {
@@ -1131,6 +1134,11 @@ PACK(typedef struct {
     PACK(struct {
       uint8_t sources[4];
     }) calc;
+    PACK(struct {
+      uint8_t gps;
+      uint8_t alt;
+      uint16_t spare;
+    }) dist;
     uint32_t param;
   };
   void init(const char *label, uint8_t unit=UNIT_RAW, uint8_t inputFlags=0);
@@ -1706,10 +1714,6 @@ enum LuaExtraFields {
   EXTRA_LONGITUDE,              LUA_EXPORT_EXTRA("longitude", "GPS longitude [degrees, East is positive]", \
                                                  "gpsToDouble(frskyData.hub.gpsLongitudeEW=='W', frskyData.hub.gpsLongitude_bp, frskyData.hub.gpsLongitude_ap)", \
                                                  "frskyData.hub.gpsFix")
-  EXTRA_PILOT_LATITUDE,         LUA_EXPORT_EXTRA("pilot-latitude", "Latitude of frist GPS position [degrees, North is positive]", \
-                                                 "pilotLatitude", "frskyData.hub.gpsFix")
-  EXTRA_PILOT_LONGITUDE,        LUA_EXPORT_EXTRA("pilot-longitude", "Longitude of frist GPS position [degrees, East is positive]", \
-                                                 "pilotLongitude", "frskyData.hub.gpsFix")
   EXTRA_GPS_CLOCK,              LUA_EXPORT_EXTRA("gps-clock", "GPS clock [seconds from midnight]", \
                                                  "(int)(frskyData.hub.hour)*3600 + frskyData.hub.min*60 + frskyData.hub.sec", "frskyData.hub.gpsFix")
   EXTRA_FLIGHT_MODE             LUA_EXPORT_EXTRA("flight-mode", "Current flight mode number [number]", \

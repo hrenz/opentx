@@ -1738,27 +1738,19 @@ extern const pm_uint8_t bchunit_ar[];
   #define FRSKY_MULTIPLIER_MAX 3
 #endif
 
-#if defined(PCBTARANIS)
-enum FrskyViews {
+enum TelemetryViews {
   TELEMETRY_CUSTOM_SCREEN_1,
   TELEMETRY_CUSTOM_SCREEN_2,
+#if defined(CPUARM)
   TELEMETRY_CUSTOM_SCREEN_3,
   TELEMETRY_CUSTOM_SCREEN_4,
-  TELEMETRY_VOLTAGES_SCREEN, // TODO NOT IF LUA
-  TELEMETRY_AFTER_FLIGHT_SCREEN, // TODO NOT IF LUA
-  FRSKY_VIEW_MAX = TELEMETRY_AFTER_FLIGHT_SCREEN
-};
+  TELEMETRY_VIEW_MAX = TELEMETRY_CUSTOM_SCREEN_4
 #else
-enum FrskyViews {
-  TELEMETRY_CUSTOM_SCREEN_1,
-  TELEMETRY_CUSTOM_SCREEN_2,
-  CASE_CPUARM(TELEMETRY_CUSTOM_SCREEN_3)
-  CASE_CPUARM(TELEMETRY_CUSTOM_SCREEN_4)
   TELEMETRY_VOLTAGES_SCREEN,
   TELEMETRY_AFTER_FLIGHT_SCREEN,
-  FRSKY_VIEW_MAX = TELEMETRY_AFTER_FLIGHT_SCREEN
-};
+  TELEMETRY_VIEW_MAX = TELEMETRY_AFTER_FLIGHT_SCREEN
 #endif
+};
 
 extern uint8_t s_frsky_view;
 
@@ -1769,8 +1761,6 @@ extern uint8_t s_frsky_view;
 
 #if defined(PCBTARANIS)
 double gpsToDouble(bool neg, int16_t bp, int16_t ap);
-extern double pilotLatitude;
-extern double pilotLongitude;
 #endif
 void getGpsPilotPosition();
 void getGpsDistance();

@@ -257,6 +257,8 @@ int8_t checkIncDecGen(uint8_t event, int8_t i_val, int8_t i_min, int8_t i_max);
   bool isSourceAvailable(int source);
   bool isSensorAvailable(int sensor);
   bool isCellsSensor(int sensor);
+  bool isGPSSensor(int sensor);
+  bool isAltSensor(int sensor);
   bool isInputSourceAvailable(int source);
   #define CHECK_INCDEC_MODELSOURCE(event, var, min, max) \
     var = checkIncDec(event,var,min,max,EE_MODEL|INCDEC_SOURCE|NO_INCDEC_MARKS, isSourceAvailable)

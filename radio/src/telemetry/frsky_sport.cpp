@@ -329,88 +329,22 @@ void frskySportProcessPacket(uint8_t *packet)
         uint16_t value = HUB_DATA_U16(packet);
         processHubPacket(id, value);
       }
-#if 1
       else {
         uint32_t flags = 0;
         if (appId >= CELLS_FIRST_ID && appId <= CELLS_LAST_ID) {
           flags = TELEM_INPUT_CELLS;
         }
+        else if (appId >= GPS_TIME_DATE_FIRST_ID && appId <= GPS_TIME_DATE_LAST_ID) {
+          flags = TELEM_INPUT_DATETIME;
+        }
+        else if (appId >= GPS_LONG_LATI_FIRST_ID && appId <= GPS_LONG_LATI_LAST_ID) {
+          flags = TELEM_INPUT_GPS;
+        }
+        else if (appId >= GPS_SPEED_FIRST_ID && appId <= GPS_SPEED_LAST_ID) {
+          data /= 10;
+        }
         setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, appId, dataId, data, flags);
       }
-#else
-      else if (appId >= GPS_TIME_DATE_FIRST_ID && appId <= GPS_TIME_DATE_LAST_ID) {
-        uint32_t gps_time_date = SPORT_DATA_U32(packet);
-        if (gps_time_date & 0x000000ff) {
-          frskyData.hub.year = (uint16_t) ((gps_time_date & 0xff000000) >> 24);
-          frskyData.hub.month = (uint8_t) ((gps_time_date & 0x00ff0000) >> 16);
-          frskyData.hub.day = (uint8_t) ((gps_time_date & 0x0000ff00) >> 8);
-        }
-        else {
-          frskyData.hub.hour = (uint8_t) ((gps_time_date & 0xff000000) >> 24);
-          frskyData.hub.min = (uint8_t) ((gps_time_date & 0x00ff0000) >> 16);
-          frskyData.hub.sec = (uint16_t) ((gps_time_date & 0x0000ff00) >> 8);
-          frskyData.hub.hour = ((uint8_t) (frskyData.hub.hour + g_eeGeneral.timezone + 24)) % 24;
-        }
-      }
-      else if (appId >= GPS_ALT_FIRST_ID && appId <= GPS_ALT_LAST_ID) {
-        frskyData.hub.gpsAltitude = SPORT_DATA_S32(packet);
-
-        if (!frskyData.hub.gpsAltitudeOffset)
-          frskyData.hub.gpsAltitudeOffset = -frskyData.hub.gpsAltitude;
-
-        if (!frskyData.hub.baroAltitudeOffset) {
-          int altitude = TELEMETRY_RELATIVE_GPS_ALT_BP;
-          if (altitude > frskyData.hub.maxAltitude)
-            frskyData.hub.maxAltitude = altitude;
-          if (altitude < frskyData.hub.minAltitude)
-            frskyData.hub.minAltitude = altitude;
-        }
-
-        if (frskyData.hub.gpsFix > 0) {
-          if (!frskyData.hub.pilotLatitude && !frskyData.hub.pilotLongitude) {
-            // First received GPS position => Pilot GPS position
-            getGpsPilotPosition();
-          }
-          else if (frskyData.hub.gpsDistNeeded || g_menuStack[g_menuStackPtr] == menuTelemetryFrsky) {
-            getGpsDistance();
-          }
-        }
-      }
-      else if (appId >= GPS_LONG_LATI_FIRST_ID && appId <= GPS_LONG_LATI_LAST_ID) {
-        uint32_t gps_long_lati_data = SPORT_DATA_U32(packet);
-        uint32_t gps_long_lati_b1w, gps_long_lati_a1w;
-        gps_long_lati_b1w = (gps_long_lati_data & 0x3fffffff) / 10000;
-        gps_long_lati_a1w = (gps_long_lati_data & 0x3fffffff) % 10000;
-        switch ((gps_long_lati_data & 0xc0000000) >> 30) {
-          case 0:
-            frskyData.hub.gpsLatitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
-            frskyData.hub.gpsLatitude_ap = gps_long_lati_a1w;
-            frskyData.hub.gpsLatitudeNS = 'N';
-            break;
-          case 1:
-            frskyData.hub.gpsLatitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
-            frskyData.hub.gpsLatitude_ap = gps_long_lati_a1w;
-            frskyData.hub.gpsLatitudeNS = 'S';
-            break;
-          case 2:
-            frskyData.hub.gpsLongitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
-            frskyData.hub.gpsLongitude_ap = gps_long_lati_a1w;
-            frskyData.hub.gpsLongitudeEW = 'E';
-            break;
-          case 3:
-            frskyData.hub.gpsLongitude_bp = (gps_long_lati_b1w / 60 * 100) + (gps_long_lati_b1w % 60);
-            frskyData.hub.gpsLongitude_ap = gps_long_lati_a1w;
-            frskyData.hub.gpsLongitudeEW = 'W';
-            break;
-        }
-        if (frskyData.hub.gpsLongitudeEW && frskyData.hub.gpsLatitudeNS) {
-          frskyData.hub.gpsFix = 1;
-        }
-        else if (frskyData.hub.gpsFix > 0) {
-          frskyData.hub.gpsFix = 0;
-        }
-      }
-#endif
     }
   }
 }
@@ -463,11 +397,22 @@ void frskySportSetDefault(int index, uint16_t id, uint8_t instance)
     telemetrySensor.prec = 1;
   }
   else if (id >= GPS_SPEED_FIRST_ID && id <= GPS_SPEED_LAST_ID) {
-    telemetrySensor.init(ZSTR_GSPD, UNIT_METERS_PER_SECOND);
+    telemetrySensor.init(ZSTR_GSPD, UNIT_KTS);
+    telemetrySensor.prec = 2;
   }
   else if (id >= CELLS_FIRST_ID && id <= CELLS_LAST_ID) {
-    telemetrySensor.init(ZSTR_CELLS, UNIT_VOLTS, TELEM_INPUT_FLAGS_HIDDEN);
+    telemetrySensor.init(ZSTR_CELLS, UNIT_VOLTS);
     telemetrySensor.prec = 2;
+  }
+  else if (id >= GPS_ALT_FIRST_ID && id <= GPS_ALT_LAST_ID) {
+    telemetrySensor.init(ZSTR_GPSALT, UNIT_DIST);
+    telemetrySensor.prec = 2;
+  }
+  else if (id >= GPS_TIME_DATE_FIRST_ID && id <= GPS_TIME_DATE_LAST_ID) {
+    telemetrySensor.init(ZSTR_GPSDATETIME);
+  }
+  else if (id >= GPS_LONG_LATI_FIRST_ID && id <= GPS_LONG_LATI_LAST_ID) {
+    telemetrySensor.init(ZSTR_GPS);
   }
   else {
     char label[4];

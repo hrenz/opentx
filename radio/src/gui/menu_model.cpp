@@ -5786,6 +5786,8 @@ enum SensorFields {
 #define SENSOR_2ND_COLUMN (12*FW)
 #define SENSOR_3RD_COLUMN (18*FW)
 
+#define SENSOR_UNIT_ROWS   (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula >= TELEM_FORMULA_CELL) ? HIDDEN_ROW : (uint8_t)0
+#define SENSOR_PREC_ROWS   (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula >= TELEM_FORMULA_CELL) ? HIDDEN_ROW : (uint8_t)0
 #define SENSOR_PARAM1_ROWS (1) ? (uint8_t)0 : HIDDEN_ROW
 #define SENSOR_PARAM2_ROWS (1) ? (uint8_t)0 : HIDDEN_ROW
 #define SENSOR_PARAM3_ROWS (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula < TELEM_FORMULA_CELL) ? (uint8_t)0 : HIDDEN_ROW
@@ -5795,7 +5797,7 @@ void menuModelSensor(uint8_t event)
 {
   TelemetrySensor * sensor = & g_model.telemetrySensors[s_currIdx];
 
-  SUBMENU(STR_MENUSENSOR, SENSOR_FIELD_MAX, {0, 0, sensor->type == TELEM_TYPE_CALCULATED ? (uint8_t)0 : (uint8_t)1, 0, 0, SENSOR_PARAM1_ROWS, SENSOR_PARAM2_ROWS, SENSOR_PARAM3_ROWS, SENSOR_PARAM4_ROWS, 0 });
+  SUBMENU(STR_MENUSENSOR, SENSOR_FIELD_MAX, {0, 0, sensor->type == TELEM_TYPE_CALCULATED ? (uint8_t)0 : (uint8_t)1, SENSOR_UNIT_ROWS, SENSOR_PREC_ROWS, SENSOR_PARAM1_ROWS, SENSOR_PARAM2_ROWS, SENSOR_PARAM3_ROWS, SENSOR_PARAM4_ROWS, 0 });
   lcd_outdezAtt(PSIZE(TR_MENUSENSOR)*FW+1, 0, s_currIdx+1, INVERS|LEFT);
 
   putsTelemetryChannelValue(SENSOR_2ND_COLUMN, 0, s_currIdx, getValue(MIXSRC_FIRST_TELEM+3*s_currIdx), 0);
@@ -5848,12 +5850,16 @@ void menuModelSensor(uint8_t event)
           }
         }
         else {
-          sensor->formula = selectMenuItem(SENSOR_2ND_COLUMN, y, "Formula", "\007Add\0   AverageCell\0", sensor->formula, 0, TELEM_FORMULA_MAX, attr, event);
+          sensor->formula = selectMenuItem(SENSOR_2ND_COLUMN, y, "Formula", "\010Add\0    Average\0Cell\0   Distance", sensor->formula, 0, TELEM_FORMULA_MAX, attr, event);
           if (attr && checkIncDec_Ret) {
+            sensor->param = 0;
             if (sensor->formula == TELEM_FORMULA_CELL) {
-              sensor->cell.source = 0;
-              sensor->cell.index = 0;
+              sensor->unit = UNIT_VOLTS;
               sensor->prec = 2;
+            }
+            else if (sensor->formula == TELEM_FORMULA_DIST) {
+              sensor->unit = UNIT_DIST;
+              sensor->prec = 0;
             }
           }
         }
@@ -5880,6 +5886,14 @@ void menuModelSensor(uint8_t event)
             }
             break;
           }
+          else if (sensor->formula == TELEM_FORMULA_DIST) {
+            lcd_putsLeft(y, "GPS sensor");
+            putsMixerSource(SENSOR_2ND_COLUMN, y, sensor->dist.gps ? MIXSRC_FIRST_TELEM+3*(sensor->dist.gps-1) : 0, attr);
+            if (attr) {
+              sensor->dist.gps = checkIncDec(event, sensor->dist.gps, 0, TELEM_VALUES_MAX, EE_MODEL|NO_INCDEC_MARKS, isGPSSensor);
+            }
+            break;
+          }
         }
         else {
           lcd_putsLeft(y, "Ratio");
@@ -5894,6 +5908,14 @@ void menuModelSensor(uint8_t event)
         if (sensor->type == TELEM_TYPE_CALCULATED) {
           if (sensor->formula == TELEM_FORMULA_CELL) {
             sensor->cell.index = selectMenuItem(SENSOR_2ND_COLUMN, y, "Cell index", "\007Lowest\0001\0     2\0     3\0     4\0     5\0     6\0     Highest", sensor->cell.index, 0, 7, attr, event);
+            break;
+          }
+          else if (sensor->formula == TELEM_FORMULA_DIST) {
+            lcd_putsLeft(y, "Alt sensor");
+            putsMixerSource(SENSOR_2ND_COLUMN, y, sensor->dist.alt ? MIXSRC_FIRST_TELEM+3*(sensor->dist.alt-1) : 0, attr);
+            if (attr) {
+              sensor->dist.alt = checkIncDec(event, sensor->dist.alt, 0, TELEM_VALUES_MAX, EE_MODEL|NO_INCDEC_MARKS, isAltSensor);
+            }
             break;
           }
         }
