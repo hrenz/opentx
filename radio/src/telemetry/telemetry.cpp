@@ -238,13 +238,14 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
       int32_t value=0, count=0, available=0, maxitems=4, mulprec=0;
       if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
         maxitems = 2;
+        value = 1;
       }
       for (int i=0; i<maxitems; i++) {
         uint8_t source = sensor.calc.sources[i];
         if (source) {
           TelemetrySensor & telemetrySensor = g_model.telemetrySensors[source-1];
           TelemetryItem & telemetryItem = telemetryItems[source-1];
-          if (sensor.formula == TELEM_FORMULA_ADD) {
+          if (sensor.formula == TELEM_FORMULA_ADD || sensor.formula == TELEM_FORMULA_MULTIPLY) {
             if (!telemetryItem.isAvailable()) {
               return;
             }
@@ -265,15 +266,11 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
           }
           if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
             mulprec += telemetrySensor.prec;
-            if (i < maxitems-1)
-              value += convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, 0, sensor.unit, 0);
-            else {
-              value *= convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, 0, sensor.unit, 0); 
-              value = convertTelemetryValue(value, sensor.unit, mulprec, sensor.unit, sensor.prec); 
-            }
+            value *= convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, 0, sensor.unit, 0);
           }
-          else 
+          else {
             value += convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, telemetrySensor.prec, sensor.unit, sensor.prec);
+          }
         }
       }
       if (sensor.formula == TELEM_FORMULA_AVERAGE) {
@@ -285,6 +282,9 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
         else {
           value = (value + count/2) / count;
         }
+      }
+      else if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
+        value = convertTelemetryValue(value, sensor.unit, mulprec, sensor.unit, sensor.prec);
       }
       setValue(sensor, value, sensor.unit, sensor.prec);
       break;
