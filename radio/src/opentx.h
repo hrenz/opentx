@@ -1638,9 +1638,10 @@ extern union ReusableBuffer reusableBuffer;
 
 void checkFlashOnBeep();
 
-#if defined(FRSKY) || defined(CPUARM)
-void convertUnit(getvalue_t & val, uint8_t & unit); // TODO check FORCEINLINE on stock
+#if defined(CPUARM)
 void putsValueWithUnit(coord_t x, coord_t y, lcdint_t val, uint8_t unit, LcdFlags att);
+#elif defined(FRSKY)
+void convertUnit(getvalue_t & val, uint8_t & unit); // TODO check FORCEINLINE on stock
 #else
 #define convertUnit(...)
 #endif

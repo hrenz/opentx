@@ -1054,8 +1054,7 @@ enum TelemetryUnit {
 #define UNIT_MAX UNIT_WATTS
 #define UNIT_DIST UNIT_METERS
 #define UNIT_TEMPERATURE UNIT_CELSIUS
-#define UNIT_SPEED UNIT_METERS_PER_SECOND
-
+#define UNIT_SPEED UNIT_KMH
 #else
 enum TelemetryUnit {
   UNIT_VOLTS,

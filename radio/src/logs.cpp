@@ -132,11 +132,13 @@ void closeLogs()
   lastLogTime = 0;
 }
 
+#if !defined(CPUARM)
 getvalue_t getConvertedTelemetryValue(getvalue_t val, uint8_t unit)
 {
   convertUnit(val, unit);
   return val;
 }
+#endif
 
 void writeHeader()
 {

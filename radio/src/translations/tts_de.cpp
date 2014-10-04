@@ -79,6 +79,7 @@ I18N_PLAY_FUNCTION(de, playNumber, getvalue_t number, uint8_t unit, uint8_t att)
     number = -number;
   }
 
+#if !defined(CPUARM)
   if (unit) {
     unit--;
     convertUnit(number, unit);
@@ -90,18 +91,20 @@ I18N_PLAY_FUNCTION(de, playNumber, getvalue_t number, uint8_t unit, uint8_t att)
     	unit = UNIT_KTS;
       }
     }
-#if defined(CPUARM)
-    if ((att & PREC1) && (unit == UNIT_FEET || (unit == UNIT_DIST && number >= 100))) {
-      number = div10_and_round(number);
-      att -= PREC1;
-    }
-#endif
     unit++;
   }
+#endif
 
   int8_t mode = MODE(att);
   if (mode > 0) {
-    div_t qr = div(number, (mode == 1 ? 10 : 100));
+#if defined(CPUARM)
+    if (mode == 2) {
+      number /= 10;
+    }
+#else
+    // we assume that we are PREC1
+#endif
+    div_t qr = div(number, 10);
     if (qr.rem > 0) {
       PLAY_NUMBER(qr.quot, 0, 0);
       PUSH_NUMBER_PROMPT(DE_PROMPT_COMMA);
