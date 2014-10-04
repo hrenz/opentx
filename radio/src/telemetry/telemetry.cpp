@@ -265,6 +265,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
               count += 1;
           }
           if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
+            count += 1;
             mulprec += telemetrySensor.prec;
             value *= convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, 0, sensor.unit, 0);
           }
@@ -284,6 +285,8 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
         }
       }
       else if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
+        if (count == 0)
+          return;
         value = convertTelemetryValue(value, sensor.unit, mulprec, sensor.unit, sensor.prec);
       }
       setValue(sensor, value, sensor.unit, sensor.prec);
