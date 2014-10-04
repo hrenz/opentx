@@ -322,7 +322,7 @@ int availableTelemetryIndex()
 {
   for (int index=0; index<TELEM_VALUES_MAX; index++) {
     TelemetrySensor & telemetrySensor = g_model.telemetrySensors[index];
-    if (telemetrySensor.id == 0) {
+    if ((telemetrySensor.id == 0) && (telemetrySensor.type != TELEM_TYPE_CALCULATED)) {
       return index;
     }
   }
