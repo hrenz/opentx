@@ -232,10 +232,14 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
       break;
 
     case TELEM_FORMULA_ADD:
+    case TELEM_FORMULA_MULTIPLY:
     case TELEM_FORMULA_AVERAGE:
     {
-      int32_t value=0, count=0, available=0;
-      for (int i=0; i<4; i++) {
+      int32_t value=0, count=0, available=0, maxitems=4, mulprec=0;
+      if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
+        maxitems = 2;
+      }
+      for (int i=0; i<maxitems; i++) {
         uint8_t source = sensor.calc.sources[i];
         if (source) {
           TelemetrySensor & telemetrySensor = g_model.telemetrySensors[source-1];
@@ -259,7 +263,17 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
             else
               count += 1;
           }
-          value += convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, telemetrySensor.prec, sensor.unit, sensor.prec);
+          if (sensor.formula == TELEM_FORMULA_MULTIPLY) {
+            mulprec += telemetrySensor.prec;
+            if (i < maxitems-1)
+              value += convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, 0, sensor.unit, 0);
+            else {
+              value *= convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, 0, sensor.unit, 0); 
+              value = convertTelemetryValue(value, sensor.unit, mulprec, sensor.unit, sensor.prec); 
+            }
+          }
+          else 
+            value += convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, telemetrySensor.prec, sensor.unit, sensor.prec);
         }
       }
       if (sensor.formula == TELEM_FORMULA_AVERAGE) {

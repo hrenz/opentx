@@ -5794,8 +5794,8 @@ enum SensorFields {
 #define SENSOR_PREC_ROWS   (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula >= TELEM_FORMULA_CELL) ? HIDDEN_ROW : (uint8_t)0
 #define SENSOR_PARAM1_ROWS (1) ? (uint8_t)0 : HIDDEN_ROW
 #define SENSOR_PARAM2_ROWS (1) ? (uint8_t)0 : HIDDEN_ROW
-#define SENSOR_PARAM3_ROWS (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula < TELEM_FORMULA_CELL) ? (uint8_t)0 : HIDDEN_ROW
-#define SENSOR_PARAM4_ROWS (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula < TELEM_FORMULA_CELL) ? (uint8_t)0 : HIDDEN_ROW
+#define SENSOR_PARAM3_ROWS (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula < TELEM_FORMULA_MULTIPLY) ? (uint8_t)0 : HIDDEN_ROW
+#define SENSOR_PARAM4_ROWS (sensor->type == TELEM_TYPE_CALCULATED && sensor->formula < TELEM_FORMULA_MULTIPLY) ? (uint8_t)0 : HIDDEN_ROW
 
 void menuModelSensor(uint8_t event)
 {
@@ -5854,7 +5854,7 @@ void menuModelSensor(uint8_t event)
           }
         }
         else {
-          sensor->formula = selectMenuItem(SENSOR_2ND_COLUMN, y, "Formula", "\010Add\0    Average\0Cell\0   Distance", sensor->formula, 0, TELEM_FORMULA_MAX, attr, event);
+          sensor->formula = selectMenuItem(SENSOR_2ND_COLUMN, y, "Formula", "\010Add\0    Average\0MultiplyCell\0   Distance", sensor->formula, 0, TELEM_FORMULA_MAX, attr, event);
           if (attr && checkIncDec_Ret) {
             sensor->param = 0;
             if (sensor->formula == TELEM_FORMULA_CELL) {
