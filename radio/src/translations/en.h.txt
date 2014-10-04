@@ -352,15 +352,13 @@
 #define LENGTH_UNIT_IMP        "ft\0"
 #define SPEED_UNIT_IMP         "mph"
 #define LENGTH_UNIT_METR       "m\0 "
-#define SPEED_UNIT_METR        "kmh"
-
+#define SPEED_UNIT_METR        "kmh"  
+  
 #if defined(CPUARM)
   #define LEN_VUNITSSYSTEM     TR("\006", "\010")
   #define TR_VUNITSSYSTEM      TR("Metric""Imper.", "Metric\0 ""Imperial")
-  #define LEN_VTELEMUNIT_METR  "\003"
-  #define TR_VTELEMUNIT_METR   "v\0 ""A\0 ""m/s""-\0 " SPEED_UNIT_METR LENGTH_UNIT_METR "@\0 ""%\0 ""mA\0""mAh""W\0 "
-  #define LEN_VTELEMUNIT_IMP   "\003"
-  #define TR_VTELEMUNIT_IMP    "v\0 ""A\0 ""m/s""-\0 " SPEED_UNIT_IMP  LENGTH_UNIT_IMP  "@\0 ""%\0 ""mA\0""mAh""W\0 "
+  #define LEN_VTELEMUNIT       "\003"
+  #define TR_VTELEMUNIT        "-\0 ""v\0 ""A\0 ""mA\0""kts""m/s""kmh""mph""m\0 ""ft\0""@\0 ""%C\0""%F\0""mAh""W\0 "
 #else
   #if defined(IMPERIAL_UNITS)
     #define LENGTH_UNIT        LENGTH_UNIT_IMP

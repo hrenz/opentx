@@ -5869,7 +5869,7 @@ void menuModelSensor(uint8_t event)
         lcd_putsLeft(y, "Unit");
         // TODO flash saving with selectMenuItem where I copied those 2 lines?
         lcd_putsiAtt(SENSOR_2ND_COLUMN, y, STR_VTELEMUNIT, sensor->unit, attr);
-        if (attr) CHECK_INCDEC_MODELVAR_ZERO(event, sensor->unit, UNIT_A1A2_MAX);
+        if (attr) CHECK_INCDEC_MODELVAR_ZERO(event, sensor->unit, UNIT_MAX);
         break;
 
       case SENSOR_FIELD_PRECISION:
@@ -5964,6 +5964,11 @@ void onSensorMenu(const char *result)
     }
     else if (result == STR_DELETE) {
       delTelemetryIndex(index);
+      index += 1;
+      if (index<TELEM_VALUES_MAX && isTelemetryFieldAvailable(index))
+        m_posVert += 1;
+      else
+        m_posVert = 1+ITEM_TELEMETRY_NEWSENSOR;
     }
   }
 }

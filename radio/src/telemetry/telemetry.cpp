@@ -2,9 +2,9 @@
 
 TelemetryItem telemetryItems[TELEM_VALUES_MAX];
 
-void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
+void TelemetryItem::setValue(const TelemetrySensor & sensor, int32_t newVal, uint32_t unit, uint32_t prec)
 {
-  if (flags == TELEM_INPUT_CELLS) {
+  if (unit == UNIT_CELLS) {
     uint32_t data = uint32_t(newVal);
     uint8_t cellIndex = data & 0xF;
     uint8_t count = (data & 0xF0) >> 4;
@@ -27,13 +27,14 @@ void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
           return;
         }
       }
+      newVal = sensor.getValue(newVal, UNIT_VOLTS, prec);
     }
     else {
       // we didn't receive all cells values
       return;
     }
   }
-  else if (flags == TELEM_INPUT_DATETIME) {
+  else if (unit == UNIT_DATETIME) {
     uint32_t data = uint32_t(newVal);
     if (data & 0x000000ff) {
       datetime.year = (uint16_t) ((data & 0xff000000) >> 24);
@@ -52,7 +53,7 @@ void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
     }
     newVal = 0;
   }
-  else if (flags == TELEM_INPUT_GPS) {
+  else if (unit == UNIT_GPS) {
     uint32_t gps_long_lati_data = uint32_t(newVal);
     uint32_t gps_long_lati_b1w, gps_long_lati_a1w;
     gps_long_lati_b1w = (gps_long_lati_data & 0x3fffffff) / 10000;
@@ -91,39 +92,47 @@ void TelemetryItem::setValue(int32_t newVal, uint8_t flags)
     }
     return;
   }
-  else if (flags == TELEM_INPUT_FLAGS_AUTO_OFFSET) {
-    if (!isAvailable()) {
-      offsetAuto = -newVal;
-    }
-    newVal += offsetAuto;
-  }
-  else if (flags == TELEM_INPUT_FLAGS_FILTERING) {
-    if (!isAvailable()) {
-      for (int i=0; i<TELEMETRY_AVERAGE_COUNT; i++) {
-        filterValues[i] = newVal;
+  else {
+    newVal = sensor.getValue(newVal, unit, prec);
+    if (sensor.inputFlags == TELEM_INPUT_FLAGS_AUTO_OFFSET) {
+      if (!isAvailable()) {
+        offsetAuto = -newVal;
       }
+      newVal += offsetAuto;
     }
-    else {
-      // calculate the average from values[] and value
-      // also shift readings in values [] array
-      unsigned int sum = filterValues[0];
-      for (int i=0; i<TELEMETRY_AVERAGE_COUNT-1; i++) {
-        int32_t tmp = filterValues[i+1];
-        filterValues[i] = tmp;
-        sum += tmp;
+    else if (sensor.inputFlags == TELEM_INPUT_FLAGS_FILTERING) {
+      if (!isAvailable()) {
+        for (int i=0; i<TELEMETRY_AVERAGE_COUNT; i++) {
+          filterValues[i] = newVal;
+        }
       }
-      filterValues[TELEMETRY_AVERAGE_COUNT-1] = newVal;
-      sum += newVal;
-      newVal = sum/(TELEMETRY_AVERAGE_COUNT+1);
+      else {
+        // calculate the average from values[] and value
+        // also shift readings in values [] array
+        unsigned int sum = filterValues[0];
+        for (int i=0; i<TELEMETRY_AVERAGE_COUNT-1; i++) {
+          int32_t tmp = filterValues[i+1];
+          filterValues[i] = tmp;
+          sum += tmp;
+        }
+        filterValues[TELEMETRY_AVERAGE_COUNT-1] = newVal;
+        sum += newVal;
+        newVal = sum/(TELEMETRY_AVERAGE_COUNT+1);
+      }
     }
   }
 
-  if (!isAvailable() || newVal < min) {
+  if (!isAvailable()) {
     min = newVal;
-  }
-  if (!isAvailable() || newVal > max) {
     max = newVal;
   }
+  else if (newVal < min) {
+    min = newVal;
+  }
+  else if (newVal > max) {
+    max = newVal;
+  }
+
   value = newVal;
   lastReceived = now();
 }
@@ -171,7 +180,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
         }
         index -= 1;
         if (index < cellsItem.cells.count && cellsItem.cells.values[index].state) {
-          setValue(cellsItem.cells.values[index].value, sensor.inputFlags);
+          setValue(sensor, cellsItem.cells.values[index].value, UNIT_VOLTS, 2);
         }
       }
       break;
@@ -218,7 +227,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
           result += dist*dist;
         }
 
-        setValue(isqrt32(result), sensor.inputFlags);
+        setValue(sensor, isqrt32(result), UNIT_METERS);
       }
       break;
 
@@ -229,6 +238,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
       for (int i=0; i<4; i++) {
         uint8_t source = sensor.calc.sources[i];
         if (source) {
+          TelemetrySensor & telemetrySensor = g_model.telemetrySensors[source-1];
           TelemetryItem & telemetryItem = telemetryItems[source-1];
           if (sensor.formula == TELEM_FORMULA_ADD) {
             if (!telemetryItem.isAvailable()) {
@@ -249,7 +259,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
             else
               count += 1;
           }
-          value += telemetryItem.value;
+          value += convertTelemetryValue(telemetryItem.value, telemetrySensor.unit, telemetrySensor.prec, sensor.unit, sensor.prec);
         }
       }
       if (sensor.formula == TELEM_FORMULA_AVERAGE) {
@@ -262,7 +272,7 @@ void TelemetryItem::eval(const TelemetrySensor & sensor)
           value = (value + count/2) / count;
         }
       }
-      setValue(value, sensor.inputFlags);
+      setValue(sensor, value, sensor.unit, sensor.prec);
       break;
     }
 
@@ -319,47 +329,70 @@ int availableTelemetryIndex()
   return -1;
 }
 
-void setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t instance, int32_t value, uint32_t flags)
+void setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t instance, int32_t value, uint32_t unit, uint32_t prec)
 {
   int index = getTelemetryIndex(protocol, id, instance);
 
   if (index >= 0) {
-    telemetryItems[index].setValue(value, flags ? flags : g_model.telemetrySensors[index].inputFlags);
+    telemetryItems[index].setValue(g_model.telemetrySensors[index], value, unit, prec);
   }
   else {
     // TODO error too many sensors
   }
 }
 
-void TelemetrySensor::init(const char *label, uint8_t unit, uint8_t inputFlags)
+void TelemetrySensor::init(const char *label, uint8_t unit, uint8_t prec)
 {
   memclear(this->label, TELEM_LABEL_LEN);
   strncpy(this->label, label, TELEM_LABEL_LEN);
   this->unit = unit;
-  this->inputFlags = inputFlags;
+  this->prec = prec;
+  // this->inputFlags = inputFlags;
 }
 
-int32_t TelemetrySensor::getValue(int32_t value, uint8_t & precision)
+int32_t convertTelemetryValue(int32_t value, uint8_t unit, uint8_t prec, uint8_t destUnit, uint8_t destPrec)
 {
+  for (int i=prec; i<destPrec; i++)
+    value *= 10;
+
+  if (unit == UNIT_METERS) {
+    if (destUnit == UNIT_FEET) {
+      // m to ft *105/32
+      value = (value * 105) / 32;
+    }
+  }
+  else if (unit == UNIT_KTS) {
+    if (destUnit == UNIT_KMH) {
+      // kts to km/h
+      value = (value * 1852) / 1000;
+    }
+    else if (destUnit == UNIT_MPH) {
+      // kts to mph
+      value = (value * 23) / 20;
+    }
+  }
+  else if (unit == UNIT_CELSIUS) {
+    if (destUnit == UNIT_FAHRENHEIT) {
+      // T(°F) = T(°C)×1,8 + 32
+      value = 32 + (value*18)/10;
+    }
+  }
+
+  for (int i=destPrec; i<prec; i++)
+    value /= 10;
+
+  return value;
+}
+
+int32_t TelemetrySensor::getValue(int32_t value, uint8_t unit, uint8_t prec) const
+{
+  value = convertTelemetryValue(value, unit, prec, this->unit, this->prec);
   if (type == TELEM_TYPE_CUSTOM) {
     if (custom.ratio)
       value *= custom.ratio;
     value += custom.offset;
   }
-  if (prec) {
-    precision = 1;
-    if (prec == 2) {
-      if (value >= 10000) {
-        value = div10_and_round(value);
-      }
-      else {
-        precision = 2;
-      }
-    }
-  }
-  else {
-    precision = 0;
-  }
+
   return value;
 }
 

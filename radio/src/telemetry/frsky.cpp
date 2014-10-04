@@ -565,10 +565,10 @@ void telemetryReset()
 #endif
 
 #if defined(SIMU) && defined(CPUARM)
-  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 0, 100);
-  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 1, 200);
-  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0100, 1, 1000);
-  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0300, 1, 0x10010020, TELEM_INPUT_CELLS);
+  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 0, 100, UNIT_CELSIUS, 0);
+  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0400, 1, 200, UNIT_CELSIUS, 0);
+  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0100, 1, 1000, UNIT_METERS, 2);
+  setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, 0x0300, 1, 0x10010020, UNIT_CELLS, 0);
 #endif
 }
 

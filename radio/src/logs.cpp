@@ -167,12 +167,17 @@ void writeHeader()
 #endif
 
 #if defined(CPUARM)
-  char label[TELEM_LABEL_LEN+2];
+  char label[TELEM_LABEL_LEN+7];
   for (int i=0; i<TELEM_VALUES_MAX; i++) {
     TelemetrySensor & sensor = g_model.telemetrySensors[i];
     if (sensor.logs) {
       memset(label, 0, sizeof(label));
-      strncpy(label, sensor.label, TELEM_LABEL_LEN);
+      zchar2str(label, sensor.label, TELEM_LABEL_LEN);
+      if (sensor.unit != UNIT_RAW) {
+        strcat(label, "(");
+        strncat(label, STR_VTELEMUNIT+1+3*sensor.unit, 3);
+        strcat(label, ")");
+      }
       strcat(label, ",");
       f_puts(label, &g_oLogFile);
     }
@@ -282,7 +287,17 @@ void writeLogs()
         TelemetrySensor & sensor = g_model.telemetrySensors[i];
         TelemetryItem & telemetryItem = telemetryItems[i];
         if (sensor.logs) {
-          f_printf(&g_oLogFile, "%d,", telemetryItem.value); // TODO we can do a lot better !!!
+          if (sensor.prec == 2) {
+            div_t qr = div(telemetryItem.value, 100);
+            f_printf(&g_oLogFile, "%d.%02d,", qr.quot, qr.rem);
+          }
+          else if (sensor.prec == 1) {
+            div_t qr = div(telemetryItem.value, 10);
+            f_printf(&g_oLogFile, "%d.%d,", qr.quot, qr.rem);
+          }
+          else {
+            f_printf(&g_oLogFile, "%d,", telemetryItem.value);
+          }
         }
       }
 #endif

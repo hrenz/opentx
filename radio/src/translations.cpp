@@ -74,12 +74,7 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(FUNCSOUNDS)
     ISTR(VTELEMCHNS)
 #if defined(FRSKY) || defined(CPUARM)
-  #if defined(CPUARM)
-    ISTR(VTELEMUNIT_IMP)
-    ISTR(VTELEMUNIT_METR)
-  #else
     ISTR(VTELEMUNIT)
-  #endif
     ISTR(VALARM)
     ISTR(VALARMFN)
     ISTR(VTELPROTO)

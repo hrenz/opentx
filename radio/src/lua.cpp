@@ -137,7 +137,7 @@ static void luaGetValueAndPush(int src)
     if (TELEMETRY_STREAMING() && telemetryItems[src].isAvailable()) {
       TelemetrySensor & telemetrySensor = g_model.telemetrySensors[src];
       uint8_t prec;
-      value = telemetrySensor.getValue(value, prec);
+      // TODO value = telemetrySensor.getValue(value, prec);
       if (prec==2)
         lua_pushnumber(L, float(value)/100.0);
       else if (prec==1)

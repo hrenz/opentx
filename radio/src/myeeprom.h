@@ -1022,6 +1022,41 @@ PACK(typedef struct { // Logical Switches data
 }) LogicalSwitchData;
 #endif
 
+#if defined(CPUARM)
+enum TelemetryUnit {
+  UNIT_RAW,
+  UNIT_VOLTS,
+  UNIT_AMPS,
+  UNIT_MILLIAMPS,
+  UNIT_KTS,
+  UNIT_METERS_PER_SECOND,
+  UNIT_KMH,
+  UNIT_MPH,
+  UNIT_METERS,
+  UNIT_FEET,
+  UNIT_CELSIUS,
+  UNIT_FAHRENHEIT,
+  UNIT_PERCENT,
+  UNIT_MAH,
+  UNIT_WATTS,
+  UNIT_DBM,
+  UNIT_HOURS,
+  UNIT_MINUTES,
+  UNIT_SECONDS,
+  UNIT_RPMS,
+  UNIT_G,
+  UNIT_HDG,
+  // FrSky format used for these fields, could be another format in the future
+  UNIT_CELLS,
+  UNIT_DATETIME,
+  UNIT_GPS
+};
+#define UNIT_MAX UNIT_WATTS
+#define UNIT_DIST UNIT_METERS
+#define UNIT_TEMPERATURE UNIT_CELSIUS
+#define UNIT_SPEED UNIT_METERS_PER_SECOND
+
+#else
 enum TelemetryUnit {
   UNIT_VOLTS,
   UNIT_AMPS,
@@ -1045,6 +1080,7 @@ enum TelemetryUnit {
   UNIT_G,
   UNIT_HDG,
 };
+#endif
 
 #if defined(CPUARM)
 PACK(typedef struct {
@@ -1100,11 +1136,7 @@ enum TelemetrySensorInputFlags
   TELEM_INPUT_FLAGS_NONE,
   TELEM_INPUT_FLAGS_AUTO_OFFSET,
   TELEM_INPUT_FLAGS_FILTERING,
-  TELEM_INPUT_FLAGS_MAX=TELEM_INPUT_FLAGS_FILTERING,
-  TELEM_INPUT_FLAGS_HIDDEN,
-  TELEM_INPUT_CELLS,
-  TELEM_INPUT_DATETIME,
-  TELEM_INPUT_GPS
+  TELEM_INPUT_FLAGS_MAX=TELEM_INPUT_FLAGS_FILTERING
 };
 
 PACK(typedef struct {
@@ -1141,8 +1173,8 @@ PACK(typedef struct {
     }) dist;
     uint32_t param;
   };
-  void init(const char *label, uint8_t unit=UNIT_RAW, uint8_t inputFlags=0);
-  int32_t getValue(int32_t value, uint8_t & prec);
+  void init(const char *label, uint8_t unit=UNIT_RAW, uint8_t prec=0);
+  int32_t getValue(int32_t value, uint8_t unit, uint8_t prec) const;
 
 }) TelemetrySensor;
 #endif

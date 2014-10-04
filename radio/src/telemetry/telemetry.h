@@ -139,7 +139,7 @@ class TelemetryItem
 
     void eval(const TelemetrySensor & sensor);
 
-    void setValue(int32_t value, uint8_t flags=0);
+    void setValue(const TelemetrySensor & sensor, int32_t newVal, uint32_t unit, uint32_t prec=0);
     bool isAvailable();
     bool isFresh();
     bool isOld();
@@ -165,10 +165,11 @@ inline bool isMinMaxTelemetryFieldAvailable(int index)
   return (sensor.id != 0);
 }
 
-void setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t instance, int32_t value, uint32_t flags=0);
+void setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t instance, int32_t value, uint32_t unit, uint32_t prec);
 void delTelemetryIndex(uint8_t index);
 int availableTelemetryIndex();
 int32_t getTelemetryValue(uint8_t index, uint8_t & prec);
+int32_t convertTelemetryValue(int32_t value, uint8_t unit, uint8_t prec, uint8_t destUnit, uint8_t destPrec);
 
 void frskySportSetDefault(int index, uint16_t type, uint8_t instance);
 

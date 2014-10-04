@@ -1026,12 +1026,10 @@ void putsTelemetryChannelValue(coord_t x, coord_t y, uint8_t channel, lcdint_t v
       displayGpsCoords(x, y, telemetryItem, att);
     }
     else {
-      uint8_t prec;
-      value = telemetrySensor.getValue(value, prec);
       LcdFlags flags = att;
-      if (prec==2)
+      if (telemetrySensor.prec==2)
         flags |= PREC2;
-      else if (prec==1)
+      else if (telemetrySensor.prec==1)
         flags |= PREC1;
       putsValueWithUnit(x, y, value, telemetrySensor.unit, flags);
     }

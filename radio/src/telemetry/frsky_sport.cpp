@@ -129,6 +129,47 @@
 #define DATA_ID_SP2UH            0x45 // 5
 #define DATA_ID_SP2UR            0xC6 // 6
 
+struct SportSensor {
+  const uint16_t firstId;
+  const uint16_t lastId;
+  const char * name;
+  const TelemetryUnit unit;
+  const uint8_t prec;
+};
+
+const SportSensor sportSensors[] = {
+  { RSSI_ID, RSSI_ID, ZSTR_RSSI, UNIT_RAW, 0 },
+  { T1_FIRST_ID, T2_LAST_ID, ZSTR_TEMP, UNIT_CELSIUS, 0 },
+  { RPM_FIRST_ID, RPM_LAST_ID, ZSTR_RPM, UNIT_RPMS, 0 },
+  { FUEL_FIRST_ID, FUEL_LAST_ID, ZSTR_FUEL, UNIT_PERCENT, 0 },
+  { ALT_FIRST_ID, ALT_LAST_ID, ZSTR_ALT, UNIT_METERS, 2 }, // TODO autoOffset
+  { VARIO_FIRST_ID, VARIO_LAST_ID, ZSTR_VSPD, UNIT_METERS_PER_SECOND, 2 },
+  { ACCX_FIRST_ID, ACCX_LAST_ID, ZSTR_ACCX, UNIT_G, 2 },
+  { ACCY_FIRST_ID, ACCY_LAST_ID, ZSTR_ACCY, UNIT_G, 2 },
+  { ACCZ_FIRST_ID, ACCZ_LAST_ID, ZSTR_ACCZ, UNIT_G, 2 },
+  { CURR_FIRST_ID, CURR_LAST_ID, ZSTR_CURR, UNIT_AMPS, 1 },
+  { VFAS_FIRST_ID, VFAS_LAST_ID, ZSTR_VFAS, UNIT_VOLTS, 2 },
+  { AIR_SPEED_FIRST_ID, AIR_SPEED_LAST_ID, ZSTR_ASPD, UNIT_METERS_PER_SECOND, 1 },
+  { GPS_SPEED_FIRST_ID, GPS_SPEED_LAST_ID, ZSTR_GSPD, UNIT_KTS, 3 }, // TODO precision 3!!!
+  { CELLS_FIRST_ID, CELLS_LAST_ID, ZSTR_CELLS, UNIT_CELLS, 2 },
+  { GPS_ALT_FIRST_ID, GPS_ALT_LAST_ID, ZSTR_GPSALT, UNIT_METERS, 2 },
+  { GPS_TIME_DATE_FIRST_ID, GPS_TIME_DATE_LAST_ID, ZSTR_GPSDATETIME, UNIT_DATETIME, 0 },
+  { GPS_LONG_LATI_FIRST_ID, GPS_LONG_LATI_LAST_ID, ZSTR_GPS, UNIT_GPS, 0 },
+  { 0, 0, NULL, UNIT_RAW, 0 } // sentinel
+};
+
+const SportSensor * getSportSensor(uint16_t id)
+{
+  const SportSensor * result = NULL;
+  for (const SportSensor * sensor = sportSensors; sensor->firstId; sensor++) {
+    if (id >= sensor->firstId && id <= sensor->lastId) {
+      result = sensor;
+      break;
+    }
+  }
+  return result;
+}
+
 void setBaroAltitude(int32_t baroAltitude)
 {
   // First received barometer altitude => Altitude offset
@@ -330,20 +371,14 @@ void frskySportProcessPacket(uint8_t *packet)
         processHubPacket(id, value);
       }
       else {
-        uint32_t flags = 0;
-        if (appId >= CELLS_FIRST_ID && appId <= CELLS_LAST_ID) {
-          flags = TELEM_INPUT_CELLS;
+        const SportSensor * sensor = getSportSensor(appId);
+        TelemetryUnit unit = UNIT_RAW;
+        uint8_t precision = 0;
+        if (sensor) {
+          unit = sensor->unit;
+          precision = sensor->prec;
         }
-        else if (appId >= GPS_TIME_DATE_FIRST_ID && appId <= GPS_TIME_DATE_LAST_ID) {
-          flags = TELEM_INPUT_DATETIME;
-        }
-        else if (appId >= GPS_LONG_LATI_FIRST_ID && appId <= GPS_LONG_LATI_LAST_ID) {
-          flags = TELEM_INPUT_GPS;
-        }
-        else if (appId >= GPS_SPEED_FIRST_ID && appId <= GPS_SPEED_LAST_ID) {
-          data /= 10;
-        }
-        setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, appId, dataId, data, flags);
+        setTelemetryValue(TELEM_PROTO_FRSKY_SPORT, appId, dataId, data, unit, precision);
       }
     }
   }
@@ -356,63 +391,12 @@ void frskySportSetDefault(int index, uint16_t id, uint8_t instance)
   telemetrySensor.id = id;
   telemetrySensor.instance = instance;
 
-  if (id == RSSI_ID) {
-    telemetrySensor.init(ZSTR_RSSI);
-  }
-  else if (id >= T1_FIRST_ID && id <= T2_LAST_ID) {
-    telemetrySensor.init(ZSTR_TEMP, UNIT_TEMPERATURE);
-  }
-  else if (id >= RPM_FIRST_ID && id <= RPM_LAST_ID) {
-    telemetrySensor.init(ZSTR_RPM, UNIT_RPMS);
-  }
-  else if (id >= FUEL_FIRST_ID && id <= FUEL_LAST_ID) {
-    telemetrySensor.init(ZSTR_FUEL, UNIT_PERCENT);
-  }
-  else if (id >= ALT_FIRST_ID && id <= ALT_LAST_ID) {
-    telemetrySensor.init(ZSTR_ALT, UNIT_DIST, TELEM_INPUT_FLAGS_AUTO_OFFSET);
-    telemetrySensor.prec = 2;
-  }
-  else if (id >= VARIO_FIRST_ID && id <= VARIO_LAST_ID) {
-    telemetrySensor.init(ZSTR_VSPD, UNIT_METERS_PER_SECOND);
-  }
-  else if (id >= ACCX_FIRST_ID && id <= ACCX_LAST_ID) {
-    telemetrySensor.init(ZSTR_ACCX, UNIT_G);
-  }
-  else if (id >= ACCY_FIRST_ID && id <= ACCY_LAST_ID) {
-    telemetrySensor.init(ZSTR_ACCY, UNIT_G);
-  }
-  else if (id >= ACCZ_FIRST_ID && id <= ACCZ_LAST_ID) {
-    telemetrySensor.init(ZSTR_ACCZ, UNIT_G);
-  }
-  else if (id >= CURR_FIRST_ID && id <= CURR_LAST_ID) {
-    telemetrySensor.init(ZSTR_CURR, UNIT_AMPS);
-    telemetrySensor.prec = 1;
-  }
-  else if (id >= VFAS_FIRST_ID && id <= VFAS_LAST_ID) {
-    telemetrySensor.init(ZSTR_VFAS, UNIT_VOLTS);
-    telemetrySensor.prec = 2;
-  }
-  else if (id >= AIR_SPEED_FIRST_ID && id <= AIR_SPEED_LAST_ID) {
-    telemetrySensor.init(ZSTR_ASPD, UNIT_METERS_PER_SECOND);
-    telemetrySensor.prec = 1;
-  }
-  else if (id >= GPS_SPEED_FIRST_ID && id <= GPS_SPEED_LAST_ID) {
-    telemetrySensor.init(ZSTR_GSPD, UNIT_KTS);
-    telemetrySensor.prec = 2;
-  }
-  else if (id >= CELLS_FIRST_ID && id <= CELLS_LAST_ID) {
-    telemetrySensor.init(ZSTR_CELLS, UNIT_VOLTS);
-    telemetrySensor.prec = 2;
-  }
-  else if (id >= GPS_ALT_FIRST_ID && id <= GPS_ALT_LAST_ID) {
-    telemetrySensor.init(ZSTR_GPSALT, UNIT_DIST);
-    telemetrySensor.prec = 2;
-  }
-  else if (id >= GPS_TIME_DATE_FIRST_ID && id <= GPS_TIME_DATE_LAST_ID) {
-    telemetrySensor.init(ZSTR_GPSDATETIME);
-  }
-  else if (id >= GPS_LONG_LATI_FIRST_ID && id <= GPS_LONG_LATI_LAST_ID) {
-    telemetrySensor.init(ZSTR_GPS);
+  const SportSensor * sensor = getSportSensor(id);
+  if (sensor) {
+    TelemetryUnit unit = sensor->unit;
+    if (unit == UNIT_CELLS)
+      unit = UNIT_VOLTS;
+    telemetrySensor.init(sensor->name, unit, sensor->prec);
   }
   else {
     char label[4];
