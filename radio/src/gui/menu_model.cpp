@@ -5869,11 +5869,19 @@ void menuModelSensor(uint8_t event)
         lcd_putsLeft(y, "Unit");
         // TODO flash saving with selectMenuItem where I copied those 2 lines?
         lcd_putsiAtt(SENSOR_2ND_COLUMN, y, STR_VTELEMUNIT, sensor->unit, attr);
-        if (attr) CHECK_INCDEC_MODELVAR_ZERO(event, sensor->unit, UNIT_MAX);
+        if (attr) {
+          CHECK_INCDEC_MODELVAR_ZERO(event, sensor->unit, UNIT_MAX);
+          if (checkIncDec_Ret) {
+            telemetryItems[s_currIdx].clear();
+          }
+        }
         break;
 
       case SENSOR_FIELD_PRECISION:
         sensor->prec = selectMenuItem(SENSOR_2ND_COLUMN, y, STR_PRECISION, "\005PREC0PREC1PREC2", sensor->prec, 0, 2, attr, event);
+        if (attr && checkIncDec_Ret) {
+          telemetryItems[s_currIdx].clear();
+        }
         break;
 
       case SENSOR_FIELD_PARAM1:

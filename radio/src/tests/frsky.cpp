@@ -261,8 +261,6 @@ TEST(FrSkySPORT, DISABLED_frskySetCellVoltage)
   //display test
   lcd_clear();
   g_model.frsky.voltsSource = FRSKY_VOLTS_SOURCE_A1;
-  displayVoltagesScreen();
-  EXPECT_TRUE(checkScreenshot("one_sensor_votages_screen"));
 }
 
 TEST(FrSkySPORT, DISABLED_StrangeCellsBug)
@@ -344,8 +342,6 @@ TEST(FrSkySPORT, DISABLED_frskySetCellVoltageTwoSensors)
   //display test
   lcd_clear();
   g_model.frsky.voltsSource = FRSKY_VOLTS_SOURCE_A1;
-  displayVoltagesScreen();
-  EXPECT_TRUE(checkScreenshot("two_sensor_votages_screen"));
 }
 
 void generateSportFasVoltagePacket(uint8_t * packet, uint32_t voltage)
