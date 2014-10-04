@@ -1419,10 +1419,22 @@ bool isSourceAvailable(int source)
     if (qr.rem == 0)
       return isTelemetryFieldAvailable(qr.quot);
     else
-      return isMinMaxTelemetryFieldAvailable(qr.quot);
+      return isTelemetryFieldComparisonAvailable(qr.quot);
   }
 
   return true;
+}
+
+bool isSourceAvailableInCustomSwitches(int source)
+{
+  bool result = isSourceAvailable(source);
+
+  if (result && source>=MIXSRC_FIRST_TELEM && source<=MIXSRC_LAST_TELEM) {
+    div_t qr = div(source-MIXSRC_FIRST_TELEM, 3);
+    result = isTelemetryFieldComparisonAvailable(qr.quot);
+  }
+
+  return result;
 }
 
 bool isSensorInRange(int sensor, unsigned int first, unsigned int last)

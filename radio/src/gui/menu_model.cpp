@@ -4805,13 +4805,17 @@ void menuModelLogicalSwitches(uint8_t event)
       putsMixerSource(CSW_2ND_COLUMN, y, v1_val, attr1);
       if (horz == 1) {
         INCDEC_SET_FLAG(EE_MODEL | INCDEC_SOURCE);
-        INCDEC_ENABLE_CHECK(isSourceAvailable);
+        INCDEC_ENABLE_CHECK(isSourceAvailableInCustomSwitches);
       }
       else {
         INCDEC_SET_FLAG(EE_MODEL);
         INCDEC_ENABLE_CHECK(NULL);
       }
-#if defined(FRSKY)
+#if defined(CPUARM)
+      putsChannelValue(CSW_3RD_COLUMN, y, v1_val, cs->v2, LEFT|attr2);
+      v2_min = -30000;
+      v2_max = 30000;
+#elif defined(FRSKY)
       if (v1_val >= MIXSRC_FIRST_TELEM) {
         putsTelemetryChannelValue(CSW_3RD_COLUMN, y, v1_val - MIXSRC_FIRST_TELEM, convertLswTelemValue(cs), LEFT|attr2);
         v2_max = maxTelemValue(v1_val - MIXSRC_FIRST_TELEM + 1);

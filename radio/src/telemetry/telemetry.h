@@ -153,7 +153,7 @@ inline bool isTelemetryFieldAvailable(int index)
   return sensor.type == TELEM_TYPE_CALCULATED || sensor.id != 0;
 }
 
-inline bool isMinMaxTelemetryFieldAvailable(int index)
+inline bool isTelemetryFieldComparisonAvailable(int index)
 {
   TelemetrySensor & sensor = g_model.telemetrySensors[index];
   if (sensor.type == TELEM_TYPE_CALCULATED)

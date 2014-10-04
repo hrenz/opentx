@@ -142,7 +142,7 @@ const SportSensor sportSensors[] = {
   { T1_FIRST_ID, T2_LAST_ID, ZSTR_TEMP, UNIT_CELSIUS, 0 },
   { RPM_FIRST_ID, RPM_LAST_ID, ZSTR_RPM, UNIT_RPMS, 0 },
   { FUEL_FIRST_ID, FUEL_LAST_ID, ZSTR_FUEL, UNIT_PERCENT, 0 },
-  { ALT_FIRST_ID, ALT_LAST_ID, ZSTR_ALT, UNIT_METERS, 2 }, // TODO autoOffset
+  { ALT_FIRST_ID, ALT_LAST_ID, ZSTR_ALT, UNIT_METERS, 2 },
   { VARIO_FIRST_ID, VARIO_LAST_ID, ZSTR_VSPD, UNIT_METERS_PER_SECOND, 2 },
   { ACCX_FIRST_ID, ACCX_LAST_ID, ZSTR_ACCX, UNIT_G, 2 },
   { ACCY_FIRST_ID, ACCY_LAST_ID, ZSTR_ACCY, UNIT_G, 2 },
@@ -150,7 +150,7 @@ const SportSensor sportSensors[] = {
   { CURR_FIRST_ID, CURR_LAST_ID, ZSTR_CURR, UNIT_AMPS, 1 },
   { VFAS_FIRST_ID, VFAS_LAST_ID, ZSTR_VFAS, UNIT_VOLTS, 2 },
   { AIR_SPEED_FIRST_ID, AIR_SPEED_LAST_ID, ZSTR_ASPD, UNIT_METERS_PER_SECOND, 1 },
-  { GPS_SPEED_FIRST_ID, GPS_SPEED_LAST_ID, ZSTR_GSPD, UNIT_KTS, 3 }, // TODO precision 3!!!
+  { GPS_SPEED_FIRST_ID, GPS_SPEED_LAST_ID, ZSTR_GSPD, UNIT_KTS, 3 },
   { CELLS_FIRST_ID, CELLS_LAST_ID, ZSTR_CELLS, UNIT_CELLS, 2 },
   { GPS_ALT_FIRST_ID, GPS_ALT_LAST_ID, ZSTR_GPSALT, UNIT_METERS, 2 },
   { GPS_TIME_DATE_FIRST_ID, GPS_TIME_DATE_LAST_ID, ZSTR_GPSDATETIME, UNIT_DATETIME, 0 },
@@ -396,7 +396,8 @@ void frskySportSetDefault(int index, uint16_t id, uint8_t instance)
     TelemetryUnit unit = sensor->unit;
     if (unit == UNIT_CELLS)
       unit = UNIT_VOLTS;
-    telemetrySensor.init(sensor->name, unit, sensor->prec);
+    uint8_t prec = min<uint8_t>(2, sensor->prec);
+    telemetrySensor.init(sensor->name, unit, prec);
   }
   else {
     char label[4];

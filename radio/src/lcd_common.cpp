@@ -940,7 +940,7 @@ const pm_uint8_t bchunit_ar[] PROGMEM = {
 
 void putsValueWithUnit(coord_t x, coord_t y, lcdint_t val, uint8_t unit, LcdFlags att)
 {
-  convertUnit(val, unit);
+  // convertUnit(val, unit);
   lcd_outdezAtt(x, y, val, att & (~NO_UNIT));
   if (!(att & NO_UNIT) && unit != UNIT_RAW) {
     lcd_putsiAtt(lcdLastPos/*+1*/, y, STR_VTELEMUNIT, unit, 0);
@@ -1018,24 +1018,19 @@ void putsTelemetryChannelValue(coord_t x, coord_t y, uint8_t channel, lcdint_t v
 {
   TelemetryItem & telemetryItem = telemetryItems[channel];
   TelemetrySensor & telemetrySensor = g_model.telemetrySensors[channel];
-  if (telemetryItem.isAvailable()) {
-    if (telemetrySensor.id >= 0x0850 && telemetrySensor.id <= 0x085f) { // TODO frsky_sport.cpp
-      displayDate(x, y, telemetryItem, att);
-    }
-    else if (telemetrySensor.id >= 0x0800 && telemetrySensor.id <= 0x080f) { // TODO frsky_sport.cpp
-      displayGpsCoords(x, y, telemetryItem, att);
-    }
-    else {
-      LcdFlags flags = att;
-      if (telemetrySensor.prec==2)
-        flags |= PREC2;
-      else if (telemetrySensor.prec==1)
-        flags |= PREC1;
-      putsValueWithUnit(x, y, value, telemetrySensor.unit, flags);
-    }
+  if (telemetrySensor.id >= 0x0850 && telemetrySensor.id <= 0x085f) { // TODO frsky_sport.cpp
+    displayDate(x, y, telemetryItem, att);
+  }
+  else if (telemetrySensor.id >= 0x0800 && telemetrySensor.id <= 0x080f) { // TODO frsky_sport.cpp
+    displayGpsCoords(x, y, telemetryItem, att);
   }
   else {
-    lcd_putsAtt(x, y, "---", att); // TODO shortcut
+    LcdFlags flags = att;
+    if (telemetrySensor.prec==2)
+      flags |= PREC2;
+    else if (telemetrySensor.prec==1)
+      flags |= PREC1;
+    putsValueWithUnit(x, y, value, telemetrySensor.unit, flags);
   }
 }
 

@@ -255,6 +255,7 @@ int8_t checkIncDecGen(uint8_t event, int8_t i_val, int8_t i_min, int8_t i_max);
 #if defined(CPUARM)
   bool isInputAvailable(int input);
   bool isSourceAvailable(int source);
+  bool isSourceAvailableInCustomSwitches(int source);
   bool isSensorAvailable(int sensor);
   bool isCellsSensor(int sensor);
   bool isGPSSensor(int sensor);
