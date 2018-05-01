@@ -313,7 +313,7 @@ Mode 4:
         <location filename="../apppreferencesdialog.ui" line="884"/>
         <location filename="../apppreferencesdialog.ui" line="1004"/>
         <source>Select Folder</source>
-        <translation type="unfinished"></translation>
+        <translation type=Verzeichnis wählen></translation>
     </message>
     <message>
         <location filename="../apppreferencesdialog.ui" line="877"/>
@@ -640,7 +640,7 @@ May be different from firmware language</source>
     <message>
         <location filename="../modeledit/channels.cpp" line="120"/>
         <source>CH%1</source>
-        <translation type="unfinished">CH%1</translation>
+        <translation>CH%1</translation>
     </message>
     <message>
         <location filename="../modeledit/channels.cpp" line="147"/>
@@ -658,12 +658,12 @@ May be different from firmware language</source>
     <message>
         <location filename="../constants.h" line="50"/>
         <source>files</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei</translation>
     </message>
     <message>
         <location filename="../constants.h" line="51"/>
         <source>Radio and Models settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Sender und Modell Einstellungen</translation>
     </message>
 </context>
 <context>
